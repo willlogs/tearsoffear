@@ -13,12 +13,13 @@ public class PlayerControl : MonoBehaviour
 
     private void Start()
     {
-        Cursor.visible = false;
         FlashLightSet();
     }
 
     private void Update()
     {
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Confined;
         CheckInput();
     }
 

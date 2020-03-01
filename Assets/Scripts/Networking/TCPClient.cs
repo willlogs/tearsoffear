@@ -20,6 +20,8 @@ public class TCPClient : MonoBehaviour
 	public TCPState cliState;
 	public bool isConnected = false;
 
+	public int conIndex = -1;
+
 	public void StartConnection()
 	{
 		Socket cli_connection = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -46,7 +48,6 @@ public class TCPClient : MonoBehaviour
 		isConnected = true;
 
 		TCPState state = (TCPState)ar.AsyncState;
-		OnConnected.Invoke("");
 		StartReceiving(state);
 	}
 
@@ -75,7 +76,20 @@ public class TCPClient : MonoBehaviour
 			{
 				// A mssg is received
 				content = content.Substring(0, indexOfEOF);
-				OnRecieveData.Invoke(content);
+				if (conIndex != -1)
+				{
+					OnRecieveData.Invoke(content);
+					state.sb.Clear();
+				}
+				else
+				{
+					try
+					{
+						conIndex = Convert.ToInt32(content);
+						OnConnected.Invoke(conIndex + "");
+					}
+					catch { }
+				}
 
 				// start receiving the next message
 				StartReceiving(state);

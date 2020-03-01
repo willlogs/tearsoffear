@@ -39,12 +39,12 @@ public class TCPServer : MonoBehaviour
 				srvr_listenersoc.BeginAccept(new AsyncCallback(AcceptCallback), srvr_listenersoc);
 				connectionAccepted.WaitOne();
 				print("connection accepted by server");
-				OnConnected.Invoke("");
 			}
 		}
 		catch(Exception e)
 		{
 			Debug.LogError(e.ToString());
+			StartListening();
 		}
 	}
 
@@ -57,6 +57,12 @@ public class TCPServer : MonoBehaviour
 
 		TCPState conState = new TCPState(handler);
 		connectionsState.Add(conState);
+
+		int conIndex = connectionsState.Count - 1;
+		SendMessage_(conIndex + "", conIndex);
+
+		OnConnected.Invoke(conIndex + "");
+
 		StartReceiving(conState);
 	}
 
@@ -88,6 +94,7 @@ public class TCPServer : MonoBehaviour
 					// A mssg is received
 					content = content.Substring(0, indexOfEOF);
 					OnRecieveData.Invoke(content);
+					state.sb.Clear();
 
 					// start receiving the next message
 					StartReceiving(state);
@@ -109,14 +116,33 @@ public class TCPServer : MonoBehaviour
 		}
 	}
 
-	public void SendMessage_(string mssg)
+	public void SendMessage_(string mssg, int conIndex = 0)
 	{
 		if (connectionsState.Count > 0)
 		{
-			print(mssg);
 			mssg = mssg + "<EOF>";
 			byte[] byteData = Encoding.ASCII.GetBytes(mssg);
-			connectionsState[0].workSocket.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallback), connectionsState[0]);
+			connectionsState[conIndex].workSocket.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallback), connectionsState[conIndex]);
+		}
+		else
+		{
+			Debug.LogWarning("no connections found but you're trying to broadcast a message");
+		}
+	}
+
+	public void BroadCastMessage(string mssg, int index = -1)
+	{
+		if (connectionsState.Count > 0)
+		{
+			int i = 0;
+			foreach (TCPState connection in connectionsState)
+			{
+				if (index > -1 && i == index) continue;
+				mssg = mssg + "<EOF>";
+				byte[] byteData = Encoding.ASCII.GetBytes(mssg);
+				connection.workSocket.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallback), connection);
+				i++;
+			}
 		}
 		else
 		{

@@ -1,46 +1,45 @@
-﻿using System.Collections;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-[System.Serializable]
-public class TransformData
-{
-    public Quaternion rotation;
-    public Vector3 position;
-    public Vector3 rbVelocity;
-
-    public TransformData(Quaternion r, Vector3 p, Vector3 vel)
-    {
-        rotation = r;
-        position = p;
-        rbVelocity = vel;
-    }
-}
+/// 
+/// TODO:
+/// 1- Spawn Players and dummies x
+/// 2- Add Menu to choose to host or connect to some other host x
+/// 3- Multiple connection handling from in server x
+///     3-1- Every one spawns in the same position
+///     3-2- Second client's messages won't get to the first from the server
+/// 4- Don't send redundant data, check for changes only x
+/// 
 
 public class MultiplayerSystem : MonoBehaviour
 {
-    public GameObject effected, reference;
+    public GameObject playerPrefab, dummyPrefab;
+    public PositionKeeper spawnPositions;
+
+    public List<GameObject> dummies = new List<GameObject>();
+    public List<TransformData> transformData = new List<TransformData>();
     public TCPClient cli;
     public TCPServer srv;
     public bool isCli, isTest;
+    public int conIndex = 0; // conIndex + 1 is the index of the dummy in the scene (if isCli is on) - index of srv is 0
 
-    Rigidbody effectedRB, referenceRB;
-    TransformData transformData;
-    bool tdSet = false, connected = false;
+    delegate void action();
+    List<action> actions = new List<action>();
+
+    bool connected = false;
     int connections = 0;
+    TransformData td;
 
-    private void Start()
+    public void Initialize()
     {
-        effectedRB = effected.GetComponent<Rigidbody>();
-        referenceRB = reference.GetComponent<Rigidbody>();
-
         if (isTest)
         {
-            cli.OnRecieveData += OnRecieveData;
-            srv.OnRecieveData += OnRecieveData;
+            cli.OnRecieveData += OnReceiveDataTEST;
+            srv.OnRecieveData += OnReceiveDataTEST;
 
-            cli.OnConnected += OnConnectionStablished;
-            srv.OnConnected += OnConnectionStablished;
+            cli.OnConnected += OnConnectionStablishedTEST;
+            srv.OnConnected += OnConnectionStablishedTEST;
 
             StartServer();
 
@@ -51,13 +50,17 @@ public class MultiplayerSystem : MonoBehaviour
             if (isCli)
             {
                 cli.OnRecieveData += OnRecieveData;
-                cli.OnConnected += OnConnectionStablished;
+                cli.OnConnected += OnConnectionStablishedCli;
+
                 cli.StartConnection();
             }
             else
             {
                 srv.OnRecieveData += OnRecieveData;
-                srv.OnConnected += OnConnectionStablished;
+                srv.OnConnected += OnConnectionStablishedSrv;
+
+                dummies.Add(Instantiate(playerPrefab, position: spawnPositions.poses[0].position, Quaternion.identity));
+                transformData.Add(new TransformData());
 
                 StartServer();
             }
@@ -73,59 +76,170 @@ public class MultiplayerSystem : MonoBehaviour
 
     private void Update()
     {
+        DoActions();
         if (!isTest && connected)
         {
-            TransformData td = new TransformData(reference.transform.rotation, reference.transform.position, referenceRB.velocity);
+            SendTD();
+            UpdateTD();
+        }
+    }
+
+    private void DoActions()
+    {
+        if (actions.Count > 0)
+        {
+            for (int i = actions.Count - 1; i >= 0; i--)
+            {
+                actions[i]();
+                actions.RemoveAt(i);
+            }
+        }
+    }
+
+    private void SendTD()
+    {
+        int index = !isCli ? 0 : conIndex + 1;
+        GameObject reference = dummies[index];
+        if (td == null || td.rotation != reference.transform.rotation || td.position != reference.transform.position)
+        {
+            td = new TransformData(reference.transform.rotation, reference.transform.position);
+            td.isSet = true;
+            Packet p = new Packet(index, td: td, tdSet: true);
 
             if (isCli)
             {
-                cli.SendMessage_(JsonUtility.ToJson(td));
+                cli.SendMessage_(JsonUtility.ToJson(p));
             }
             else
             {
-                srv.SendMessage_(JsonUtility.ToJson(td));
+                srv.BroadCastMessage(JsonUtility.ToJson(p));
             }
+        }
+    }
 
-            if (tdSet)
+    private void UpdateTD()
+    {
+        int index = !isCli ? 0 : conIndex + 1;
+        int i = 0;
+        foreach(TransformData td in transformData)
+        {
+            bool shouldSkip = (isCli && i == conIndex + 1) || (!isCli && i == 0);
+
+            if (td.isSet && !shouldSkip)
             {
-                effected.transform.rotation = transformData.rotation;
-                effected.transform.position = transformData.position;
-                effectedRB.velocity = transformData.rbVelocity;
-                tdSet = false;
+                dummies[i].transform.rotation = td.rotation;
+                dummies[i].transform.position = td.position;
+                td.isSet = false;
+            }            
+
+            i++;
+        }
+    }
+
+    private void SetTD(Packet p)
+    {
+        try
+        {
+            if ((isCli && p.index != conIndex + 1) || (!isCli && p.index != 0))
+            {
+                TransformData td = p.td;
+                td.isSet = true;
+                transformData[p.index] = td;
             }
+        }
+        catch(Exception e)
+        {
+            print("err seting td: " + e.ToString());
         }
     }
 
     private void OnRecieveData(string data)
     {
-        OnScreenConsole.Instance.Print("Recieved " + data);
-        if (isTest)
+        try
         {
-            print(data);
+            if (!isCli && srv.connectionsState.Count > 1)
+            {
+                print(data);
+                srv.BroadCastMessage(data);
+            }
+            Packet p = JsonUtility.FromJson<Packet>(data);
+            if (p.type == PacketType.NEWCLI)
+            {
+                actions.Add(AddNewDummy);
+            }
+            else
+            {
+                if (p.tdSet)
+                {
+                    SetTD(p);
+                }
+            }
         }
-        else
+        catch(Exception e)
         {
-            TransformData td = JsonUtility.FromJson<TransformData>(data);
-            transformData = td;
-            tdSet = true;
+            print("parsing err: " + e);
         }
     }
 
-    private void OnConnectionStablished(string data)
+    private static void OnReceiveDataTEST(string data)
     {
-        if (isTest)
+        print(data);
+    }
+
+    private void OnConnectionStablishedCli(string data)
+    {
+        conIndex = Convert.ToInt32(data);
+        actions.Add(InstantiateCli);
+        connected = true;
+    }
+
+    private void OnConnectionStablishedSrv(string data)
+    {
+        conIndex = Convert.ToInt32(data);
+        if (conIndex == 0)
         {
-            connections++;
-            print("new connection stablished : " + connections);
-            if (connections == 2)
-            {
-                srv.SendMessage_("Hi!");
-                cli.SendMessage_("Hi from cli!");
-            }
+            actions.Add(InstantiateSrv);
         }
         else
         {
-            connected = true;
+            actions.Add(AddNewDummy);
+            Packet p = new Packet(conIndex, type: PacketType.NEWCLI);
+            srv.BroadCastMessage(JsonUtility.ToJson(p), conIndex);
         }
+        connected = true;
+    }
+
+    private void OnConnectionStablishedTEST(string data)
+    {
+        connections++;
+        print("new connection stablished : " + connections);
+        if (connections == 2)
+        {
+            srv.SendMessage_("Hi!");
+            cli.SendMessage_("Hi from cli!");
+        }
+    }
+
+    private void InstantiateSrv()
+    {
+        dummies.Add(Instantiate(dummyPrefab, spawnPositions.poses[0].position, Quaternion.identity));
+        transformData.Add(new TransformData());
+    }
+
+    private void InstantiateCli()
+    {
+        for (int i = 0; i <= conIndex; i++)
+        {
+            dummies.Add(Instantiate(dummyPrefab, spawnPositions.poses[i].position, Quaternion.identity));
+            transformData.Add(new TransformData());
+        }
+
+        dummies.Add(Instantiate(playerPrefab, spawnPositions.poses[conIndex + 1].position, Quaternion.identity));
+    }
+
+    private void AddNewDummy()
+    {
+        dummies.Add(Instantiate(dummyPrefab, spawnPositions.poses[dummies.Count + 1].position, Quaternion.identity));
+        transformData.Add(new TransformData());
     }
 }

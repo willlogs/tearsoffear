@@ -20,7 +20,6 @@ public class DialogueTrigger : MonoBehaviour
         if (dialogue.HasNext())
         {
             Message next = dialogue.NextMessage();
-            print(next.message);
             dialogueSystem.Say(next, SayNext);
         }
         else

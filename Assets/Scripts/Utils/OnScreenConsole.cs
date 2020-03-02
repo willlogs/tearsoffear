@@ -18,7 +18,7 @@ public class OnScreenConsole : MonoBehaviour
     {
         consoleText.text += "\n" + msg;
         string[] splitted = consoleText.text.Split('\n');
-        if (splitted.Length > 15)
+        if (splitted.Length > 60)
         {
             consoleText.text = string.Join("\n", splitted, 1, splitted.Length - 1);
         }

@@ -137,7 +137,11 @@ public class TCPServer : MonoBehaviour
 			int i = 0;
 			foreach (TCPState connection in connectionsState)
 			{
-				if (index > -1 && i == index) continue;
+				if (index > -1 && i == index)
+				{
+					print("skipping index: " + index);
+					continue;
+				}
 				mssg = mssg + "<EOF>";
 				byte[] byteData = Encoding.ASCII.GetBytes(mssg);
 				connection.workSocket.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallback), connection);

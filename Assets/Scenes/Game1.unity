@@ -3599,7 +3599,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1790784388}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 1.323, z: 0.334}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 46446075}
@@ -3819,6 +3819,26 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 644836264}
     m_Modifications:
+    - target: {fileID: 1039884297, guid: 8b92acca81a6ded41b3e3a915302803e, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 464
+      objectReference: {fileID: 0}
+    - target: {fileID: 1039884298, guid: 8b92acca81a6ded41b3e3a915302803e, type: 3}
+      propertyPath: m_Text
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 1039884298, guid: 8b92acca81a6ded41b3e3a915302803e, type: 3}
+      propertyPath: m_FontData.m_FontSize
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 1039884298, guid: 8b92acca81a6ded41b3e3a915302803e, type: 3}
+      propertyPath: m_FontData.m_MinSize
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1039884298, guid: 8b92acca81a6ded41b3e3a915302803e, type: 3}
+      propertyPath: m_FontData.m_LineSpacing
+      value: 0.8
+      objectReference: {fileID: 0}
     - target: {fileID: 3981246614129908112, guid: 8b92acca81a6ded41b3e3a915302803e,
         type: 3}
       propertyPath: m_Name

@@ -21,7 +21,7 @@ public class MultiplayerSystem : MonoBehaviour
     public List<TransformData> transformData = new List<TransformData>();
     public TCPClient cli;
     public TCPServer srv;
-    public bool isCli, isTest;
+    public bool isCli, isTest, printLastPacket = true;
     public int conIndex = 0; // conIndex + 1 is the index of the dummy in the scene (if isCli is on) - index of srv is 0
 
     delegate void action();
@@ -30,6 +30,9 @@ public class MultiplayerSystem : MonoBehaviour
     bool connected = false;
     int connections = 0;
     TransformData td;
+
+    string lastPacket;
+    bool newPacket = false;
 
     public void Initialize()
     {
@@ -76,6 +79,7 @@ public class MultiplayerSystem : MonoBehaviour
 
     private void Update()
     {
+        PrintLastPacket();
         DoActions();
         if (!isTest && connected)
         {
@@ -125,11 +129,15 @@ public class MultiplayerSystem : MonoBehaviour
         {
             bool shouldSkip = (isCli && i == conIndex + 1) || (!isCli && i == 0);
 
-            if (td.isSet && !shouldSkip)
+            if (td.isSet)
             {
-                dummies[i].transform.rotation = td.rotation;
-                dummies[i].transform.position = td.position;
+                if (!shouldSkip)
+                {
+                    dummies[i].transform.rotation = td.rotation;
+                    dummies[i].transform.position = td.position;
+                }
                 td.isSet = false;
+                OnScreenConsole.Instance.Print(index + " " + i + " " + shouldSkip);
             }            
 
             i++;
@@ -140,12 +148,9 @@ public class MultiplayerSystem : MonoBehaviour
     {
         try
         {
-            if ((isCli && p.index != conIndex + 1) || (!isCli && p.index != 0))
-            {
-                TransformData td = p.td;
-                td.isSet = true;
-                transformData[p.index] = td;
-            }
+            TransformData td = p.td;
+            td.isSet = true;
+            transformData[p.index] = td;
         }
         catch(Exception e)
         {
@@ -159,18 +164,25 @@ public class MultiplayerSystem : MonoBehaviour
         {
             if (!isCli && srv.connectionsState.Count > 1)
             {
-                print(data);
+                print("bc: " + data);
                 srv.BroadCastMessage(data);
             }
+
+            lastPacket = data;
+            newPacket = true;
+
             Packet p = JsonUtility.FromJson<Packet>(data);
+
             if (p.type == PacketType.NEWCLI)
             {
                 actions.Add(AddNewDummy);
+                print("add new dummy");
             }
             else
             {
                 if (p.tdSet)
                 {
+                    print("td set!");
                     SetTD(p);
                 }
             }
@@ -235,11 +247,25 @@ public class MultiplayerSystem : MonoBehaviour
         }
 
         dummies.Add(Instantiate(playerPrefab, spawnPositions.poses[conIndex + 1].position, Quaternion.identity));
+        transformData.Add(new TransformData());
     }
 
     private void AddNewDummy()
     {
         dummies.Add(Instantiate(dummyPrefab, spawnPositions.poses[dummies.Count + 1].position, Quaternion.identity));
         transformData.Add(new TransformData());
+    }
+
+    private void PrintLastPacket()
+    {
+        try
+        {
+            if (newPacket)
+            {
+                OnScreenConsole.Instance.Print(lastPacket);
+                newPacket = false;
+            }
+        }
+        catch { }
     }
 }

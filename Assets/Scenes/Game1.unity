@@ -197,7 +197,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   lights: []
-  turnOffLights: 1
+  turnOffLights: 0
 --- !u!1 &60037918
 GameObject:
   m_ObjectHideFlags: 0

@@ -9,11 +9,13 @@ public class PlayerControl : MonoBehaviour
     public Rigidbody rb;
     public Transform theCam;
     public Light flashLight;
-    public bool flashLightOn = false;
+    public bool flashLightOn = false, isMoving;
+    public DummyAnimations animations;
 
     private void Start()
     {
         FlashLightSet();
+        animations = GetComponent<DummyAnimations>();
     }
 
     private void Update()
@@ -70,10 +72,12 @@ public class PlayerControl : MonoBehaviour
         if (shouldMove)
         {
             Move(moveDir.normalized);
+            if (!animations.walking) animations.Walk();
         }
         else
         {
             StopMoving();
+            if (animations.walking) animations.Idle();
         }
     }
 

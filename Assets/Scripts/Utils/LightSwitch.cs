@@ -9,10 +9,11 @@ public class LightSwitch : MonoBehaviour
 
     private void Start()
     {
-        foreach(Light l in GetComponentsInChildren<Light>())
-        {
-            lights.Add(l);
-            l.enabled = false;
-        }
+        if(turnOffLights)
+            foreach(Light l in GetComponentsInChildren<Light>())
+            {
+                lights.Add(l);
+                l.enabled = false;
+            }
     }
 }

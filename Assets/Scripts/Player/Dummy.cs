@@ -2,10 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum PacketType
+public class Dummy : MonoBehaviour
 {
-    NEWCLI,
-    TRANSFORMDATA,
-    EVENT,
-    SCARE
+    public int index = -1;
 }

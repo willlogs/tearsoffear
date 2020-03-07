@@ -3,7 +3,19 @@ guid: 1b0954c1225ab584f83e04c237bbebe2
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - playerPrefab: {fileID: 7535978292779560179, guid: 26ab53f687b768745aa0a7f09cd7252f,
+      type: 3}
+  - dummyPrefab: {fileID: 1150522415572206925, guid: 176b4248d2ea82c40a3174d9f69b5a22,
+      type: 3}
+  - predatorPref: {fileID: 6224059832221775682, guid: 4cafbfa6b95f4ca4a8f4c0c86804f5e6,
+      type: 3}
+  - dummyPredatorPref: {fileID: 2356984135607175185, guid: c2c9af144bd2b3840901ed197a9a91e6,
+      type: 3}
+  - spawnPositions: {instanceID: 0}
+  - predSpawnPos: {instanceID: 0}
+  - cli: {instanceID: 0}
+  - srv: {instanceID: 0}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

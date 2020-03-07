@@ -2,20 +2,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-/// 
-/// TODO:
-/// 1- Spawn Players and dummies x
-/// 2- Add Menu to choose to host or connect to some other host x
-/// 3- Multiple connection handling from in server x
-///     3-1- Every one spawns in the same position
-///     3-2- Second client's messages won't get to the first from the server
-/// 4- Don't send redundant data, check for changes only x
-/// 
-
 public class MultiplayerSystem : MonoBehaviour
 {
-    public GameObject playerPrefab, dummyPrefab;
+    public GameObject playerPrefab, dummyPrefab, predatorPref, dummyPredatorPref;
     public PositionKeeper spawnPositions;
+    public Transform predSpawnPos;
 
     public List<GameObject> dummies = new List<GameObject>();
     public List<TransformData> transformData = new List<TransformData>();
@@ -62,11 +53,27 @@ public class MultiplayerSystem : MonoBehaviour
                 srv.OnRecieveData += OnRecieveData;
                 srv.OnConnected += OnConnectionStablishedSrv;
 
-                dummies.Add(Instantiate(playerPrefab, position: spawnPositions.poses[0].position, Quaternion.identity));
-                transformData.Add(new TransformData());
+                AddMonster();
 
                 StartServer();
             }
+        }
+    }
+
+    public void SendScarePacket(int targetIndex)
+    {
+        int index = !isCli ? 0 : conIndex + 1;
+        Packet p = new Packet(index, sIndex: targetIndex, type: PacketType.SCARE);
+
+        if (isCli)
+        {
+            // potential problem in server and passing the message to the proper one
+            cli.SendMessage_(JsonUtility.ToJson(p));
+        }
+        else
+        {
+            OnScreenConsole.Instance.Print("sending scare packet " + targetIndex);
+            srv.SendMessage_(JsonUtility.ToJson(p), targetIndex - 1);
         }
     }
 
@@ -137,7 +144,6 @@ public class MultiplayerSystem : MonoBehaviour
                     dummies[i].transform.position = td.position;
                 }
                 td.isSet = false;
-                OnScreenConsole.Instance.Print(index + " " + i + " " + shouldSkip);
             }            
 
             i++;
@@ -173,18 +179,33 @@ public class MultiplayerSystem : MonoBehaviour
 
             Packet p = JsonUtility.FromJson<Packet>(data);
 
-            if (p.type == PacketType.NEWCLI)
+            switch (p.type)
             {
-                actions.Add(AddNewDummy);
-                print("add new dummy");
-            }
-            else
-            {
-                if (p.tdSet)
-                {
-                    print("td set!");
-                    SetTD(p);
-                }
+                case PacketType.NEWCLI:
+                    if (p.isPred)
+                    {
+                        actions.Add(AddNewMonsterDummy);
+                    }
+                    else
+                    {
+                        actions.Add(AddNewDummy);
+                    }
+                    break;
+
+                case PacketType.TRANSFORMDATA:
+                    if (p.tdSet)
+                    {
+                        SetTD(p);
+                    }
+                    break;
+
+                case PacketType.SCARE:
+                    print("scare message " + p.scareIndex);
+                    if (p.scareIndex == conIndex + 1)
+                    {
+                        actions.Add(GetScared);
+                    }
+                    break;
             }
         }
         catch(Exception e)
@@ -235,6 +256,7 @@ public class MultiplayerSystem : MonoBehaviour
     private void InstantiateSrv()
     {
         dummies.Add(Instantiate(dummyPrefab, spawnPositions.poses[0].position, Quaternion.identity));
+        dummies[dummies.Count - 1].AddComponent<Dummy>().index = dummies.Count - 1;
         transformData.Add(new TransformData());
     }
 
@@ -242,8 +264,16 @@ public class MultiplayerSystem : MonoBehaviour
     {
         for (int i = 0; i <= conIndex; i++)
         {
-            dummies.Add(Instantiate(dummyPrefab, spawnPositions.poses[i].position, Quaternion.identity));
-            transformData.Add(new TransformData());
+            if (i == 0)
+            {
+                AddNewMonsterDummy();
+            }
+            else
+            {
+                dummies.Add(Instantiate(dummyPrefab, spawnPositions.poses[i].position, Quaternion.identity));
+                dummies[dummies.Count - 1].AddComponent<Dummy>().index = dummies.Count - 1;
+                transformData.Add(new TransformData());
+            }
         }
 
         dummies.Add(Instantiate(playerPrefab, spawnPositions.poses[conIndex + 1].position, Quaternion.identity));
@@ -253,6 +283,19 @@ public class MultiplayerSystem : MonoBehaviour
     private void AddNewDummy()
     {
         dummies.Add(Instantiate(dummyPrefab, spawnPositions.poses[dummies.Count + 1].position, Quaternion.identity));
+        dummies[dummies.Count - 1].AddComponent<Dummy>().index = dummies.Count - 1;
+        transformData.Add(new TransformData());
+    }
+
+    private void AddNewMonsterDummy()
+    {
+        dummies.Add(Instantiate(dummyPredatorPref, predSpawnPos.position, Quaternion.identity));
+        transformData.Add(new TransformData());
+    }
+
+    private void AddMonster()
+    {
+        dummies.Add(Instantiate(predatorPref, predSpawnPos.position, Quaternion.identity));
         transformData.Add(new TransformData());
     }
 
@@ -262,10 +305,16 @@ public class MultiplayerSystem : MonoBehaviour
         {
             if (newPacket)
             {
-                OnScreenConsole.Instance.Print(lastPacket);
+                //OnScreenConsole.Instance.Print(lastPacket);
                 newPacket = false;
             }
         }
         catch { }
+    }
+
+    private void GetScared()
+    {
+        print("getting scared");
+        dummies[conIndex + 1].GetComponent<PlayerControl>().GetScared();
     }
 }

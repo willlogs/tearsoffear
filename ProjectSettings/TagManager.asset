@@ -3,7 +3,9 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - Predator
+  - Dummy
   layers:
   - Default
   - TransparentFX
@@ -13,6 +15,10 @@ TagManager:
   - UI
   - 
   - 
+  - Sensor
+  - Character
+  - Terrain
+  - Dummy
   - 
   - 
   - 
@@ -32,11 +38,7 @@ TagManager:
   - 
   - 
   - 
-  - 
-  - 
-  - 
-  - 
-  - 
+  - PP
   m_SortingLayers:
   - name: Default
     uniqueID: 0

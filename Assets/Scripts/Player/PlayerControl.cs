@@ -2,56 +2,31 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerControl : MonoBehaviour
+public class PlayerControl : Controller
 {
-    public KeyCode forward, backward, left, right, jump, sprint, flashLightSwitch;
-    public float mouseSpeedX, mouseSpeedY, moveSpeed, jumpSpeed, minYRot, maxYRot, minXRot, maxXRot, sprintMultiplier;
-    public Rigidbody rb;
-    public Transform theCam;
+    public KeyCode jump, sprint, flashLightSwitch;
+    public float sprintMultiplier, jumpSpeed;
     public Light flashLight;
-    public bool flashLightOn = false, isMoving;
+    public bool flashLightOn = false;
     public DummyAnimations animations;
+    public ScareEffect se;
 
-    private void Start()
+    public void GetScared()
+    {
+        se.Scare();
+    }
+
+    protected override void Start()
     {
         FlashLightSet();
         animations = GetComponent<DummyAnimations>();
     }
 
-    private void Update()
+    protected override void CheckInput()
     {
-        Cursor.visible = false;
-        Cursor.lockState = CursorLockMode.Confined;
-        CheckInput();
-    }
-
-    private void CheckInput()
-    {
-        Vector3 moveDir = Vector3.zero;
-        bool shouldMove = false;
-
-        if (Input.GetKey(forward))
+        if (Input.GetKeyUp(flashLightSwitch))
         {
-            moveDir += transform.forward;
-            shouldMove = true;
-        }
-
-        if (Input.GetKey(backward))
-        {
-            moveDir -= transform.forward;
-            shouldMove = true;
-        }
-
-        if (Input.GetKey(left))
-        {
-            moveDir -= transform.right;
-            shouldMove = true;
-        }
-
-        if (Input.GetKey(right))
-        {
-            moveDir += transform.right;
-            shouldMove = true;
+            ToggleFlashLight();
         }
 
         if (Input.GetKeyDown(sprint))
@@ -64,19 +39,14 @@ public class PlayerControl : MonoBehaviour
             moveSpeed /= sprintMultiplier;
         }
 
-        if (Input.GetKeyUp(flashLightSwitch))
-        {
-            ToggleFlashLight();
-        }
+        base.CheckInput();
 
         if (shouldMove)
         {
-            Move(moveDir.normalized);
             if (!animations.walking) animations.Walk();
         }
         else
         {
-            StopMoving();
             if (animations.walking) animations.Idle();
         }
     }
@@ -90,6 +60,7 @@ public class PlayerControl : MonoBehaviour
     private void FlashLightSet()
     {
         flashLight.enabled = flashLightOn;
+
         if (flashLightOn)
         {
             flashLight.transform.Translate(Vector3.up);
@@ -98,24 +69,5 @@ public class PlayerControl : MonoBehaviour
         {
             flashLight.transform.Translate(Vector3.down);
         }
-    }
-
-    private void Move(Vector3 moveVector)
-    {
-        rb.velocity = moveVector * moveSpeed;
-    }
-
-    private void StopMoving()
-    {
-        rb.velocity = rb.velocity - rb.velocity * Time.deltaTime * moveSpeed;
-    }
-
-    private void FixedUpdate()
-    {
-        float rx = Input.GetAxis("Mouse Y") * mouseSpeedX;
-        float ry = Input.GetAxis("Mouse X") * mouseSpeedY;
-
-        theCam.Rotate(new Vector3(-rx, 0, 0) * Time.fixedDeltaTime);
-        transform.Rotate(new Vector3(0, ry, 0) * Time.fixedDeltaTime);
     }
 }

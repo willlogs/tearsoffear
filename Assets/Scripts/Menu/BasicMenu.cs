@@ -8,6 +8,7 @@ public class BasicMenu : MonoBehaviour
     public InputField ipAddressField;
 
     public PositionKeeper spawnPoses;
+    public Transform predSpawnPos;
     public GameObject mpSystemPrefab;
 
     public void HostClickHandler()
@@ -15,6 +16,7 @@ public class BasicMenu : MonoBehaviour
         MultiplayerSystem mpSystem = InstantiateMP();
 
         mpSystem.spawnPositions = spawnPoses;
+        mpSystem.predSpawnPos = predSpawnPos;
         mpSystem.isCli = false;
 
         mpSystem.Initialize();
@@ -27,6 +29,7 @@ public class BasicMenu : MonoBehaviour
         MultiplayerSystem mpSystem = InstantiateMP();
 
         mpSystem.spawnPositions = spawnPoses;
+        mpSystem.predSpawnPos = predSpawnPos;
         mpSystem.isCli = true;
         mpSystem.cli.ipAddr = ipAddressField.text;
 

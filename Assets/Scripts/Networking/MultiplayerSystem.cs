@@ -18,7 +18,7 @@ public class MultiplayerSystem : MonoBehaviour
     delegate void action();
     List<action> actions = new List<action>();
 
-    bool connected = false;
+    bool connected = false, isPred = false;
     int connections = 0;
     TransformData td;
 
@@ -142,6 +142,9 @@ public class MultiplayerSystem : MonoBehaviour
                 {
                     dummies[i].transform.rotation = td.rotation;
                     dummies[i].transform.position = td.position;
+
+                    // TODO: optimize this with a list of dummies
+                    dummies[i].GetComponent<DummyAnimations>().sfx.Walk();
                 }
                 td.isSet = false;
             }            

@@ -6,6 +6,7 @@ public class DummyAnimations : MonoBehaviour
 {
     public Animator animator;
     public bool walking = false;
+    public FootStepSFX sfx;
 
     public void Walk()
     {

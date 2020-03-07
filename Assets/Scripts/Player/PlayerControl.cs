@@ -14,6 +14,7 @@ public class PlayerControl : Controller
     public void GetScared()
     {
         se.Scare();
+        Die();
     }
 
     protected override void Start()

@@ -10,14 +10,20 @@ public class Controller : MonoBehaviour
     public bool isMoving, isAlive = true;
     public Transform theCam;
     public Transform body;
+    public FootStepSFX sfx;
 
     protected bool shouldMove = false;
-    protected Timer deathTimer;
+    protected bool normalDeath = true;
+
+    public void Die()
+    {
+        isAlive = false;
+        Invoke(nameof(GotAlive), deathWait);
+    }
 
     protected virtual void Start()
     {
         SetCursorProperties();
-        deathTimer = Instantiate<Timer>(new Timer(30, GotAlive, false));
     }
 
     private void GotAlive()
@@ -33,7 +39,10 @@ public class Controller : MonoBehaviour
 
     protected virtual void Update()
     {
-        CheckInput();
+        if (isAlive || !normalDeath)
+        {
+            CheckInput();
+        }
     }
 
     protected virtual void CheckInput()
@@ -78,11 +87,13 @@ public class Controller : MonoBehaviour
     protected virtual void Move(Vector3 moveVector)
     {
         rb.velocity = moveVector * moveSpeed;
+        sfx.walking = true;
     }
 
     protected virtual void StopMoving()
     {
         rb.velocity = rb.velocity - rb.velocity * Time.deltaTime * moveSpeed;
+        sfx.walking = false;
     }
 
     protected virtual void FixedUpdate()

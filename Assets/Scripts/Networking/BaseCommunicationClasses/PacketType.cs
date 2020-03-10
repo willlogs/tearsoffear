@@ -7,5 +7,6 @@ public enum PacketType
     NEWCLI,
     TRANSFORMDATA,
     EVENT,
-    SCARE
+    SCARE,
+    HIT
 }

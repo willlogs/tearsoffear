@@ -4,12 +4,13 @@ using UnityEngine;
 
 public class PlayerControl : Controller
 {
-    public KeyCode jump, sprint, flashLightSwitch;
+    public KeyCode jump, sprint, flashLightSwitch, activateShield;
     public float sprintMultiplier, jumpSpeed;
     public Light flashLight;
-    public bool flashLightOn = false;
+    public bool flashLightOn = false, shielded;
     public DummyAnimations animations;
     public ScareEffect se;
+    public Shield shield;
 
     public void GetScared()
     {
@@ -21,6 +22,7 @@ public class PlayerControl : Controller
     {
         FlashLightSet();
         animations = GetComponent<DummyAnimations>();
+        shield.OnDeactivated += DeativateShield;
     }
 
     protected override void CheckInput()
@@ -50,6 +52,11 @@ public class PlayerControl : Controller
         {
             if (animations.walking) animations.Idle();
         }
+
+        if (Input.GetKeyDown(activateShield))
+        {
+            shielded = shield.Boom();
+        }
     }
 
     private void ToggleFlashLight()
@@ -70,5 +77,10 @@ public class PlayerControl : Controller
         {
             flashLight.transform.Translate(Vector3.down);
         }
+    }
+
+    private void DeativateShield()
+    {
+        shielded = false;
     }
 }

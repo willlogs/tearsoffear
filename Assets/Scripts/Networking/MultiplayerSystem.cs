@@ -203,10 +203,18 @@ public class MultiplayerSystem : MonoBehaviour
                     break;
 
                 case PacketType.SCARE:
-                    print("scare message " + p.scareIndex);
-                    if (p.scareIndex == conIndex + 1)
+                    print("scare message " + p.targetIndex);
+                    if (p.targetIndex == conIndex + 1)
                     {
                         actions.Add(GetScared);
+                    }
+                    break;
+
+                // TODO: fix when pred is chosen randomly
+                case PacketType.HIT:
+                    if (!isCli)
+                    {
+                        dummies[0].GetComponent<PredatorControl>().Die();
                     }
                     break;
             }
@@ -217,13 +225,18 @@ public class MultiplayerSystem : MonoBehaviour
         }
     }
 
-    private static void OnReceiveDataTEST(string data)
+    private void OnReceiveDataTEST(string data)
     {
         print(data);
     }
 
     private void OnConnectionStablishedCli(string data)
     {
+        lastPacket = data;
+        newPacket = true;
+
+        print("con stab");
+        print(data);
         conIndex = Convert.ToInt32(data);
         actions.Add(InstantiateCli);
         connected = true;
@@ -231,6 +244,9 @@ public class MultiplayerSystem : MonoBehaviour
 
     private void OnConnectionStablishedSrv(string data)
     {
+        lastPacket = data;
+        newPacket = true;
+
         conIndex = Convert.ToInt32(data);
         if (conIndex == 0)
         {
@@ -253,6 +269,19 @@ public class MultiplayerSystem : MonoBehaviour
         {
             srv.SendMessage_("Hi!");
             cli.SendMessage_("Hi from cli!");
+        }
+    }
+
+    private void SendMessageTo(string mssg, int i = 0)
+    {
+        // TODO: implement targetted mssg from clients
+        if (isCli)
+        {
+            cli.SendMessage_(mssg);
+        }
+        else
+        {
+            srv.SendMessage_(mssg, i);
         }
     }
 
@@ -318,6 +347,16 @@ public class MultiplayerSystem : MonoBehaviour
     private void GetScared()
     {
         print("getting scared");
-        dummies[conIndex + 1].GetComponent<PlayerControl>().GetScared();
+        PlayerControl pc = dummies[conIndex + 1].GetComponent<PlayerControl>();
+
+        if (pc.shielded)
+        {
+            Packet p = new Packet(conIndex + 1, type: PacketType.HIT, sIndex: 0);
+            SendMessageTo(JsonUtility.ToJson(p));
+        }
+        else
+        {
+            pc.GetScared();
+        }
     }
 }

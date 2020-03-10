@@ -85,6 +85,7 @@ public class TCPClient : MonoBehaviour
 				{
 					try
 					{
+						print("received first packet");
 						conIndex = Convert.ToInt32(content);
 						OnConnected.Invoke(conIndex + "");
 					}

@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Predator
   - Dummy
+  - ChargingSystem
   layers:
   - Default
   - TransparentFX

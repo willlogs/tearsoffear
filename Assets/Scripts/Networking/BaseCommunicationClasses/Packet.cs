@@ -12,7 +12,7 @@ public class Packet
     public PacketType type;
 
     public int index; // index of the dummy in the scene
-    public int scareIndex;
+    public int targetIndex;
 
     public Packet(int index, TransformData td = null, bool tdSet = false, PacketType type = PacketType.TRANSFORMDATA, bool ip = false, int sIndex = 0)
     {
@@ -21,6 +21,6 @@ public class Packet
         this.td = td;
         this.tdSet = tdSet;
         this.type = type;
-        this.scareIndex = sIndex;
+        this.targetIndex = sIndex;
     }
 }

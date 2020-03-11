@@ -15,9 +15,12 @@ public class BasicMenu : MonoBehaviour
     {
         MultiplayerSystem mpSystem = InstantiateMP();
 
+        mpSystem.con = mpSystem.GetComponent<TCPServer>();
+
         mpSystem.spawnPositions = spawnPoses;
         mpSystem.predSpawnPos = predSpawnPos;
         mpSystem.isCli = false;
+        mpSystem.con.ipAddr = ipAddressField.text;
 
         mpSystem.Initialize();
 
@@ -28,10 +31,12 @@ public class BasicMenu : MonoBehaviour
     {
         MultiplayerSystem mpSystem = InstantiateMP();
 
+        mpSystem.con = mpSystem.GetComponent<TCPClient>();
+
         mpSystem.spawnPositions = spawnPoses;
         mpSystem.predSpawnPos = predSpawnPos;
         mpSystem.isCli = true;
-        mpSystem.cli.ipAddr = ipAddressField.text;
+        mpSystem.con.ipAddr = ipAddressField.text;
 
         mpSystem.Initialize();
 

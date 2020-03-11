@@ -25,13 +25,16 @@ public class FootStepSFX : MonoBehaviour
 
     private void Update()
     {
-        if(walking || time < betweenSteps)
-            time += Time.deltaTime;
-
-        if(time > betweenSteps && walking)
+        if (sfx.Length > 0)
         {
-            time = 0;
-            PlaySFX();
+            if (walking || time < betweenSteps)
+                time += Time.deltaTime;
+
+            if (time > betweenSteps && walking)
+            {
+                time = 0;
+                PlaySFX();
+            }
         }
     }
 

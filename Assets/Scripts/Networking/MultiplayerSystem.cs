@@ -4,94 +4,99 @@ using UnityEngine;
 
 public class MultiplayerSystem : MonoBehaviour
 {
+    #region Public Variables
+    public static MultiplayerSystem instance;
+
+    // Prefabs and SpawnPoses
     public GameObject playerPrefab, dummyPrefab, predatorPref, dummyPredatorPref;
     public PositionKeeper spawnPositions;
     public Transform predSpawnPos;
 
-    public List<GameObject> dummies = new List<GameObject>();
-    public List<TransformData> transformData = new List<TransformData>();
-    public TCPClient cli;
-    public TCPServer srv;
-    public bool isCli, isTest, printLastPacket = true;
-    public int conIndex = 0; // conIndex + 1 is the index of the dummy in the scene (if isCli is on) - index of srv is 0
+    // Connection
+    public TCPConnection con;
 
+    public MultiplayerTools tools;
+
+    // Options
+    public bool isCli, printLastPacket = true;
+    public int conIndex = 0; // conIndex + 1 is the index of the dummy in the scene (if isCli is on) - index of srv is 0
+    #endregion
+
+    #region Private Variables
+    // Private things
     delegate void action();
     List<action> actions = new List<action>();
 
+    // connectino management
     bool connected = false, isPred = false;
     int connections = 0;
     TransformData td;
 
+    // For printing last packet
     string lastPacket;
     bool newPacket = false;
+    #endregion
 
+    #region public methods
     public void Initialize()
     {
-        if (isTest)
-        {
-            cli.OnRecieveData += OnReceiveDataTEST;
-            srv.OnRecieveData += OnReceiveDataTEST;
+        // TODO: turn this to a method in tools
+        tools = gameObject.AddComponent<MultiplayerTools>();
+        tools.playerPrefab = playerPrefab;
+        tools.dummyPrefab = dummyPrefab;
+        tools.predatorPref = predatorPref;
+        tools.dummyPredatorPref = dummyPredatorPref;
+        tools.spawnPositions = spawnPositions;
+        tools.predSpawnPos = predSpawnPos;
 
-            cli.OnConnected += OnConnectionStablishedTEST;
-            srv.OnConnected += OnConnectionStablishedTEST;
-
-            StartServer();
-
-            cli.StartConnection();
-        }
-        else
-        {
-            if (isCli)
-            {
-                cli.OnRecieveData += OnRecieveData;
-                cli.OnConnected += OnConnectionStablishedCli;
-
-                cli.StartConnection();
-            }
-            else
-            {
-                srv.OnRecieveData += OnRecieveData;
-                srv.OnConnected += OnConnectionStablishedSrv;
-
-                AddMonster();
-
-                StartServer();
-            }
-        }
+        InitializeSystem();
+        instance = this;
     }
 
     public void SendScarePacket(int targetIndex)
     {
         int index = !isCli ? 0 : conIndex + 1;
+
         Packet p = new Packet(index, sIndex: targetIndex, type: PacketType.SCARE);
+
+        con.SendMessage_(JsonUtility.ToJson(p));
+    }
+    #endregion
+
+    private void InitializeSystem()
+    {
+        con.BindEventHandler(OnRecieveData, 0);
 
         if (isCli)
         {
-            // potential problem in server and passing the message to the proper one
-            cli.SendMessage_(JsonUtility.ToJson(p));
+            con.StartIt();
+            con.BindEventHandler(OnConnectionStablishedCli, 1);
         }
         else
         {
-            OnScreenConsole.Instance.Print("sending scare packet " + targetIndex);
-            srv.SendMessage_(JsonUtility.ToJson(p), targetIndex - 1);
+            con.BindEventHandler(OnConnectionStablishedSrv, 1);
+            tools.AddMonster();
+            StartServer();
         }
     }
 
     private void StartServer()
     {
         // call srvr.StartListening() as async function
-        TCPServer.StartListeningAsync startListeningAsync = new TCPServer.StartListeningAsync(srv.StartListening);
+        TCPServer.StartListeningAsync startListeningAsync = new TCPServer.StartListeningAsync(con.StartIt);
         startListeningAsync.BeginInvoke(null, null);
     }
 
     private void Update()
     {
-        PrintLastPacket();
+        if(printLastPacket)
+            PrintLastPacket();
+
         DoActions();
-        if (!isTest && connected)
+        if (connected)
         {
             SendTD();
-            UpdateTD();
+            tools.UpdateTransforms(isCli, conIndex);
         }
     }
 
@@ -110,7 +115,7 @@ public class MultiplayerSystem : MonoBehaviour
     private void SendTD()
     {
         int index = !isCli ? 0 : conIndex + 1;
-        GameObject reference = dummies[index];
+        GameObject reference = tools.dummies[index];
         if (td == null || td.rotation != reference.transform.rotation || td.position != reference.transform.position)
         {
             td = new TransformData(reference.transform.rotation, reference.transform.position);
@@ -119,37 +124,12 @@ public class MultiplayerSystem : MonoBehaviour
 
             if (isCli)
             {
-                cli.SendMessage_(JsonUtility.ToJson(p));
+                con.SendMessage_(JsonUtility.ToJson(p));
             }
             else
             {
-                srv.BroadCastMessage(JsonUtility.ToJson(p));
+                con.BroadCastMessage(JsonUtility.ToJson(p));
             }
-        }
-    }
-
-    private void UpdateTD()
-    {
-        int index = !isCli ? 0 : conIndex + 1;
-        int i = 0;
-        foreach(TransformData td in transformData)
-        {
-            bool shouldSkip = (isCli && i == conIndex + 1) || (!isCli && i == 0);
-
-            if (td.isSet)
-            {
-                if (!shouldSkip)
-                {
-                    dummies[i].transform.rotation = td.rotation;
-                    dummies[i].transform.position = td.position;
-
-                    // TODO: optimize this with a list of dummies
-                    dummies[i].GetComponent<DummyAnimations>().sfx.Walk();
-                }
-                td.isSet = false;
-            }            
-
-            i++;
         }
     }
 
@@ -159,7 +139,7 @@ public class MultiplayerSystem : MonoBehaviour
         {
             TransformData td = p.td;
             td.isSet = true;
-            transformData[p.index] = td;
+            tools.transformData[p.index] = td;
         }
         catch(Exception e)
         {
@@ -171,11 +151,7 @@ public class MultiplayerSystem : MonoBehaviour
     {
         try
         {
-            if (!isCli && srv.connectionsState.Count > 1)
-            {
-                print("bc: " + data);
-                srv.BroadCastMessage(data);
-            }
+            con.BroadCastMessage(data);
 
             lastPacket = data;
             newPacket = true;
@@ -187,11 +163,11 @@ public class MultiplayerSystem : MonoBehaviour
                 case PacketType.NEWCLI:
                     if (p.isPred)
                     {
-                        actions.Add(AddNewMonsterDummy);
+                        actions.Add(tools.AddDummyMonster);
                     }
                     else
                     {
-                        actions.Add(AddNewDummy);
+                        actions.Add(tools.AddDummy);
                     }
                     break;
 
@@ -214,7 +190,7 @@ public class MultiplayerSystem : MonoBehaviour
                 case PacketType.HIT:
                     if (!isCli)
                     {
-                        dummies[0].GetComponent<PredatorControl>().Die();
+                        tools.dummies[0].GetComponent<PredatorControl>().Die();
                     }
                     break;
             }
@@ -223,11 +199,6 @@ public class MultiplayerSystem : MonoBehaviour
         {
             print("parsing err: " + e);
         }
-    }
-
-    private void OnReceiveDataTEST(string data)
-    {
-        print(data);
     }
 
     private void OnConnectionStablishedCli(string data)
@@ -254,42 +225,21 @@ public class MultiplayerSystem : MonoBehaviour
         }
         else
         {
-            actions.Add(AddNewDummy);
+            actions.Add(tools.AddDummy);
             Packet p = new Packet(conIndex, type: PacketType.NEWCLI);
-            srv.BroadCastMessage(JsonUtility.ToJson(p), conIndex);
+            con.BroadCastMessage(JsonUtility.ToJson(p), conIndex);
         }
         connected = true;
     }
 
-    private void OnConnectionStablishedTEST(string data)
-    {
-        connections++;
-        print("new connection stablished : " + connections);
-        if (connections == 2)
-        {
-            srv.SendMessage_("Hi!");
-            cli.SendMessage_("Hi from cli!");
-        }
-    }
-
     private void SendMessageTo(string mssg, int i = 0)
     {
-        // TODO: implement targetted mssg from clients
-        if (isCli)
-        {
-            cli.SendMessage_(mssg);
-        }
-        else
-        {
-            srv.SendMessage_(mssg, i);
-        }
+        con.SendMessage_(mssg, i);
     }
 
     private void InstantiateSrv()
     {
-        dummies.Add(Instantiate(dummyPrefab, spawnPositions.poses[0].position, Quaternion.identity));
-        dummies[dummies.Count - 1].AddComponent<Dummy>().index = dummies.Count - 1;
-        transformData.Add(new TransformData());
+        tools.AddDummy();
     }
 
     private void InstantiateCli()
@@ -298,46 +248,27 @@ public class MultiplayerSystem : MonoBehaviour
         {
             if (i == 0)
             {
-                AddNewMonsterDummy();
+                tools.AddDummyMonster();
             }
             else
             {
-                dummies.Add(Instantiate(dummyPrefab, spawnPositions.poses[i].position, Quaternion.identity));
-                dummies[dummies.Count - 1].AddComponent<Dummy>().index = dummies.Count - 1;
-                transformData.Add(new TransformData());
+                GameObject temp = Instantiate(dummyPrefab, spawnPositions.poses[i].position, Quaternion.identity);
+                tools.dummies.Add(temp);
+                temp.AddComponent<Dummy>().index = tools.dummies.Count - 1;
+                tools.transformData.Add(new TransformData());
             }
         }
 
-        dummies.Add(Instantiate(playerPrefab, spawnPositions.poses[conIndex + 1].position, Quaternion.identity));
-        transformData.Add(new TransformData());
+        tools.AddPlayer();
     }
-
-    private void AddNewDummy()
-    {
-        dummies.Add(Instantiate(dummyPrefab, spawnPositions.poses[dummies.Count + 1].position, Quaternion.identity));
-        dummies[dummies.Count - 1].AddComponent<Dummy>().index = dummies.Count - 1;
-        transformData.Add(new TransformData());
-    }
-
-    private void AddNewMonsterDummy()
-    {
-        dummies.Add(Instantiate(dummyPredatorPref, predSpawnPos.position, Quaternion.identity));
-        transformData.Add(new TransformData());
-    }
-
-    private void AddMonster()
-    {
-        dummies.Add(Instantiate(predatorPref, predSpawnPos.position, Quaternion.identity));
-        transformData.Add(new TransformData());
-    }
-
+    
     private void PrintLastPacket()
     {
         try
         {
             if (newPacket)
             {
-                //OnScreenConsole.Instance.Print(lastPacket);
+                OnScreenConsole.Instance.Print(lastPacket);
                 newPacket = false;
             }
         }
@@ -347,7 +278,7 @@ public class MultiplayerSystem : MonoBehaviour
     private void GetScared()
     {
         print("getting scared");
-        PlayerControl pc = dummies[conIndex + 1].GetComponent<PlayerControl>();
+        PlayerControl pc = tools.dummies[conIndex + 1].GetComponent<PlayerControl>();
 
         if (pc.shielded)
         {

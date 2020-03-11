@@ -7,32 +7,27 @@ using System.Text;
 using System.Threading;
 using UnityEngine;
 
-public class TCPClient : MonoBehaviour
+public class TCPClient : TCPConnection
 {
-	public static ManualResetEvent connectionStablished = new ManualResetEvent(false);
-
-	public delegate void tcpCallBack(string data);
-	public event tcpCallBack OnRecieveData;
-	public event tcpCallBack OnConnected;
-
-	public string ipAddr;
-	public int portNumber = 11000;
-	public TCPState cliState;
 	public bool isConnected = false;
 
 	public int conIndex = -1;
+	public override void StartIt()
+	{
+		StartConnection();
+	}
 
 	public void StartConnection()
 	{
 		Socket cli_connection = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 		IPEndPoint srvr_ep = new IPEndPoint(IPAddress.Parse(ipAddr), portNumber);
 
-		cliState = new TCPState(cli_connection);
+		theState = new TCPState(cli_connection);
 
 		try
 		{
 			connectionStablished.Reset();
-			cli_connection.BeginConnect(srvr_ep, new AsyncCallback(ConnectionCallback), cliState);
+			cli_connection.BeginConnect(srvr_ep, new AsyncCallback(ConnectionCallback), theState);
 			connectionStablished.WaitOne();
 		}
 		catch(Exception e)
@@ -56,7 +51,7 @@ public class TCPClient : MonoBehaviour
 		state.workSocket.BeginReceive(state.buffer, 0, TCPState.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);
 	}
 
-	private void ReceiveCallback(IAsyncResult ar)
+	protected override void ReceiveCallback(IAsyncResult ar)
 	{
 		String content = String.Empty;
 
@@ -78,7 +73,7 @@ public class TCPClient : MonoBehaviour
 				content = content.Substring(0, indexOfEOF);
 				if (conIndex != -1)
 				{
-					OnRecieveData.Invoke(content);
+					OnReceivedDataHandler(content);
 					state.sb.Clear();
 				}
 				else
@@ -87,7 +82,7 @@ public class TCPClient : MonoBehaviour
 					{
 						print("received first packet");
 						conIndex = Convert.ToInt32(content);
-						OnConnected.Invoke(conIndex + "");
+						OnConnectedHandler(conIndex + "");
 					}
 					catch { }
 				}
@@ -107,14 +102,19 @@ public class TCPClient : MonoBehaviour
 		}
 	}
 
-	public void SendMessage_(string mssg)
+	public override void SendMessage_(string mssg, int conIndex = 0)
 	{
 		if (isConnected)
 		{
 			mssg = mssg + "<EOF>";
 			byte[] byteData = Encoding.ASCII.GetBytes(mssg);
-			cliState.workSocket.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallback), cliState);
+			theState.workSocket.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallback), theState);
 		}
+	}
+
+	public override void BroadCastMessage(string mssg, int index = -1)
+	{
+		Debug.LogWarning("You are trying to broadcast from a client! This is not cool man!");
 	}
 
 	private void SendCallback(IAsyncResult ar)
@@ -132,8 +132,8 @@ public class TCPClient : MonoBehaviour
 
 	public void ShutDown()
 	{
-		cliState.workSocket.Shutdown(SocketShutdown.Both);
-		cliState.workSocket.Close();
+		theState.workSocket.Shutdown(SocketShutdown.Both);
+		theState.workSocket.Close();
 		Debug.Log("socket shutdown");
 		isConnected = false;
 	}

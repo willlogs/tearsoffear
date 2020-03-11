@@ -7,20 +7,16 @@ using System.Text;
 using System.Threading;
 using UnityEngine;
 
-public class TCPServer : MonoBehaviour
+public class TCPServer : TCPConnection
 {
-	public static ManualResetEvent connectionAccepted = new ManualResetEvent(false);
-
-	public delegate void tcpCallBack(string data);
-	public event tcpCallBack OnRecieveData;
-	public event tcpCallBack OnConnected;
-
-	public string ipAddr;
-	public int portNumber = 11000;
-	public TCPState srvrState;
 	public List<TCPState> connectionsState = new List<TCPState>();
 
 	public delegate void StartListeningAsync();
+
+	public override void StartIt()
+	{
+		StartListening();
+	}
 
 	public void StartListening()
 	{
@@ -28,16 +24,16 @@ public class TCPServer : MonoBehaviour
 		IPEndPoint srvr_ep = new IPEndPoint(IPAddress.Parse(ipAddr), portNumber);
 		srvr_listenersoc.Bind(srvr_ep);
 		srvr_listenersoc.Listen(100);
-		srvrState = new TCPState(srvr_listenersoc);
+		theState = new TCPState(srvr_listenersoc);
 		print("server set, waiting for connectoin");
 
 		try
 		{
 			while (true)
 			{
-				connectionAccepted.Reset();
+				connectionStablished.Reset();
 				srvr_listenersoc.BeginAccept(new AsyncCallback(AcceptCallback), srvr_listenersoc);
-				connectionAccepted.WaitOne();
+				connectionStablished.WaitOne();
 				print("connection accepted by server");
 			}
 		}
@@ -50,7 +46,7 @@ public class TCPServer : MonoBehaviour
 
 	private void AcceptCallback(IAsyncResult ar)
 	{
-		connectionAccepted.Set();
+		connectionStablished.Set();
 
 		Socket listener = (Socket)ar.AsyncState;
 		Socket handler = listener.EndAccept(ar);
@@ -61,7 +57,7 @@ public class TCPServer : MonoBehaviour
 		int conIndex = connectionsState.Count - 1;
 		SendMessage_(conIndex + "", conIndex);
 
-		OnConnected.Invoke(conIndex + "");
+		OnConnectedHandler(conIndex + "");
 
 		StartReceiving(conState);
 	}
@@ -71,7 +67,7 @@ public class TCPServer : MonoBehaviour
 		state.workSocket.BeginReceive(state.buffer, 0, TCPState.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);
 	}
 
-	private void ReceiveCallback(IAsyncResult ar)
+	protected override void ReceiveCallback(IAsyncResult ar)
 	{
 		try
 		{
@@ -93,7 +89,7 @@ public class TCPServer : MonoBehaviour
 				{
 					// A mssg is received
 					content = content.Substring(0, indexOfEOF);
-					OnRecieveData.Invoke(content);
+					OnReceivedDataHandler(content);
 					state.sb.Clear();
 
 					// start receiving the next message
@@ -116,7 +112,7 @@ public class TCPServer : MonoBehaviour
 		}
 	}
 
-	public void SendMessage_(string mssg, int conIndex = 0)
+	public override void SendMessage_(string mssg, int conIndex = 0)
 	{
 		if (connectionsState.Count > 0)
 		{
@@ -130,7 +126,7 @@ public class TCPServer : MonoBehaviour
 		}
 	}
 
-	public void BroadCastMessage(string mssg, int index = -1)
+	public override void BroadCastMessage(string mssg, int index = -1)
 	{
 		if (connectionsState.Count > 0)
 		{

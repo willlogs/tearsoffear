@@ -11,6 +11,7 @@ public class PlayerControl : Controller
     public DummyAnimations animations;
     public ScareEffect se;
     public Shield shield;
+    public Interactor interactor;
 
     public void GetScared()
     {
@@ -56,6 +57,11 @@ public class PlayerControl : Controller
         if (Input.GetKeyDown(activateShield))
         {
             shielded = shield.Boom();
+        }
+
+        if (Input.GetMouseButtonDown(0))
+        {
+            interactor.Interact();
         }
     }
 

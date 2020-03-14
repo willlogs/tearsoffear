@@ -41,8 +41,6 @@ public class MultiplayerTools : MonoBehaviour
 
                 diff = td.position - dummies[i].transform.position;
 
-                print(diff + " " + dummies[i].transform.position + " " + td.position);
-
                 if (diff.magnitude < maxErr)
                     td.isSet = false;
             }
@@ -51,7 +49,7 @@ public class MultiplayerTools : MonoBehaviour
         }
     }
 
-    public void AddDummy()
+    public void AddDummy(int input)
     {
         int positionIndex = dummies.Count;
         GameObject temp = Instantiate(dummyPrefab, spawnPositions.poses[positionIndex].position, Quaternion.identity);
@@ -60,7 +58,7 @@ public class MultiplayerTools : MonoBehaviour
         transformData.Add(new TransformData());
     }
 
-    public void AddDummyMonster()
+    public void AddDummyMonster(int input)
     {
         GameObject temp = Instantiate(dummyPredatorPref, predSpawnPos.position, Quaternion.identity);
         dummies.Add(temp);
@@ -68,7 +66,7 @@ public class MultiplayerTools : MonoBehaviour
         transformData.Add(new TransformData());
     }
 
-    public void AddPlayer()
+    public void AddPlayer(int input)
     {
         GameObject temp = Instantiate(playerPrefab, spawnPositions.poses[dummies.Count].position, Quaternion.identity);
         dummies.Add(temp);
@@ -76,7 +74,7 @@ public class MultiplayerTools : MonoBehaviour
         transformData.Add(new TransformData());
     }
 
-    public void AddMonster()
+    public void AddMonster(int input)
     {
         GameObject temp = Instantiate(predatorPref, predSpawnPos.position, Quaternion.identity);
         dummies.Add(temp);

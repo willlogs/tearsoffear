@@ -8,6 +8,8 @@ public class MultiplayerSystem : MonoBehaviour
     public static MultiplayerSystem instance;
 
     // Prefabs and SpawnPoses
+    public delegate void action(int input);
+
     public GameObject playerPrefab, dummyPrefab, predatorPref, dummyPredatorPref;
     public PositionKeeper spawnPositions;
     public Transform predSpawnPos;
@@ -24,8 +26,7 @@ public class MultiplayerSystem : MonoBehaviour
 
     #region Private Variables
     // Private things
-    delegate void action();
-    List<action> actions = new List<action>();
+    List<Action> actions = new List<Action>();
 
     // connectino management
     bool connected = false, isPred = false;
@@ -61,6 +62,33 @@ public class MultiplayerSystem : MonoBehaviour
 
         con.SendMessage_(JsonUtility.ToJson(p));
     }
+
+    public void SendDoorTogglePacket(int targetI)
+    {
+        int index = !isCli ? 0 : conIndex + 1;
+
+        Packet p = new Packet(index, sIndex: targetI, type: PacketType.DOORTOGGLE);
+
+        SendMessageTo(JsonUtility.ToJson(p));
+    }
+
+    public void SendCollectPacket(int targetIndex)
+    {
+        int index = !isCli ? 0 : conIndex + 1;
+
+        Packet p = new Packet(index, sIndex: targetIndex, type: PacketType.COLLECT);
+
+        SendMessageTo(JsonUtility.ToJson(p));
+    }
+
+    public void SendVisPacket(bool isvis)
+    {
+        int index = !isCli ? 0 : conIndex + 1;
+
+        Packet p = new Packet(index, type: isvis?PacketType.VIS:PacketType.UNVIS);
+
+        SendMessageTo(JsonUtility.ToJson(p));
+    }
     #endregion
 
     private void InitializeSystem()
@@ -75,7 +103,7 @@ public class MultiplayerSystem : MonoBehaviour
         else
         {
             con.BindEventHandler(OnConnectionStablishedSrv, 1);
-            tools.AddMonster();
+            tools.AddMonster(0);
             StartServer();
         }
     }
@@ -106,7 +134,7 @@ public class MultiplayerSystem : MonoBehaviour
         {
             for (int i = actions.Count - 1; i >= 0; i--)
             {
-                actions[i]();
+                actions[i].a(actions[i].input);
                 actions.RemoveAt(i);
             }
         }
@@ -151,23 +179,24 @@ public class MultiplayerSystem : MonoBehaviour
     {
         try
         {
-            con.BroadCastMessage(data);
-
             lastPacket = data;
             newPacket = true;
 
             Packet p = JsonUtility.FromJson<Packet>(data);
+
+            if(!isCli)
+                con.BroadCastMessage(data, p.index - 1);
 
             switch (p.type)
             {
                 case PacketType.NEWCLI:
                     if (p.isPred)
                     {
-                        actions.Add(tools.AddDummyMonster);
+                        actions.Add(new Action(-1, tools.AddDummyMonster));
                     }
                     else
                     {
-                        actions.Add(tools.AddDummy);
+                        actions.Add(new Action(-1, tools.AddDummy));
                     }
                     break;
 
@@ -182,7 +211,7 @@ public class MultiplayerSystem : MonoBehaviour
                     print("scare message " + p.targetIndex);
                     if (p.targetIndex == conIndex + 1)
                     {
-                        actions.Add(GetScared);
+                        actions.Add(new Action(-1, GetScared));
                     }
                     break;
 
@@ -191,6 +220,32 @@ public class MultiplayerSystem : MonoBehaviour
                     if (!isCli)
                     {
                         tools.dummies[0].GetComponent<PredatorControl>().Die();
+                    }
+                    break;
+
+                case PacketType.DOORTOGGLE:
+                    actions.Add(new Action(p.targetIndex, ToggleDoor));
+                    print("door toggle: " + p.targetIndex);
+                    break;
+
+                case PacketType.COLLECT:
+                    actions.Add(new Action(p.targetIndex, CollectCollectable));
+                    print("collecting " + p.targetIndex);
+                    break;
+
+                case PacketType.VIS:
+                    if (!isCli)
+                    {
+                        print("vis");
+                        actions.Add(new Action(0, SetVisibility));
+                    }
+                    break;
+
+                case PacketType.UNVIS:
+                    if (!isCli)
+                    {
+                        print("unvis");
+                        actions.Add(new Action(1, SetVisibility));
                     }
                     break;
             }
@@ -206,10 +261,8 @@ public class MultiplayerSystem : MonoBehaviour
         lastPacket = data;
         newPacket = true;
 
-        print("con stab");
-        print(data);
         conIndex = Convert.ToInt32(data);
-        actions.Add(InstantiateCli);
+        actions.Add(new Action(-1, InstantiateCli));
         connected = true;
     }
 
@@ -221,11 +274,11 @@ public class MultiplayerSystem : MonoBehaviour
         conIndex = Convert.ToInt32(data);
         if (conIndex == 0)
         {
-            actions.Add(InstantiateSrv);
+            actions.Add(new Action(-1, InstantiateSrv));
         }
         else
         {
-            actions.Add(tools.AddDummy);
+            actions.Add(new Action(-1, tools.AddDummy));
             Packet p = new Packet(conIndex, type: PacketType.NEWCLI);
             con.BroadCastMessage(JsonUtility.ToJson(p), conIndex);
         }
@@ -237,18 +290,18 @@ public class MultiplayerSystem : MonoBehaviour
         con.SendMessage_(mssg, i);
     }
 
-    private void InstantiateSrv()
+    private void InstantiateSrv(int input)
     {
-        tools.AddDummy();
+        tools.AddDummy(0);
     }
 
-    private void InstantiateCli()
+    private void InstantiateCli(int input)
     {
         for (int i = 0; i <= conIndex; i++)
         {
             if (i == 0)
             {
-                tools.AddDummyMonster();
+                tools.AddDummyMonster(0);
             }
             else
             {
@@ -259,7 +312,7 @@ public class MultiplayerSystem : MonoBehaviour
             }
         }
 
-        tools.AddPlayer();
+        tools.AddPlayer(0);
     }
     
     private void PrintLastPacket()
@@ -275,7 +328,7 @@ public class MultiplayerSystem : MonoBehaviour
         catch { }
     }
 
-    private void GetScared()
+    private void GetScared(int input)
     {
         print("getting scared");
         PlayerControl pc = tools.dummies[conIndex + 1].GetComponent<PlayerControl>();
@@ -288,6 +341,29 @@ public class MultiplayerSystem : MonoBehaviour
         else
         {
             pc.GetScared();
+        }
+    }
+
+    private void ToggleDoor(int input)
+    {
+        DoorManager.instance.Toggle(input);
+    }
+
+    private void CollectCollectable(int input)
+    {
+        Collectible.GetCollected(input);
+    }
+
+    private void SetVisibility(int input)
+    {
+        PredatorControl pc = (PredatorControl)tools.myController;
+        if(input == 0)
+        {
+            pc.canMove = false;
+        }
+        else
+        {
+            pc.canMove = true;
         }
     }
 }

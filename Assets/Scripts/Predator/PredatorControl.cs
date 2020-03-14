@@ -16,6 +16,7 @@ public class PredatorControl : Controller
     public KeyCode jump = KeyCode.Space;
     public float jumpSpeed;
     public Sensors sensors;
+    public bool canMove = true;
 
     bool onGround = true;
     bool onWall = false;
@@ -54,11 +55,14 @@ public class PredatorControl : Controller
 
     protected override void CheckInput()
     {
-        base.CheckInput();
-
-        if (Input.GetKeyDown(jump) && (onGround || onWall))
+        if (canMove)
         {
-            Jump();
+            base.CheckInput();
+
+            if (Input.GetKeyDown(jump) && (onGround || onWall))
+            {
+                Jump();
+            }
         }
 
         if(Input.GetMouseButtonDown(0) && vs.hasTarget)
@@ -98,5 +102,13 @@ public class PredatorControl : Controller
     {
         onWall = false;
         rb.useGravity = true;
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if(collision.gameObject.tag == "Interactable")
+        {
+            collision.gameObject.GetComponent<Interactive>().GhostInteract();
+        }
     }
 }

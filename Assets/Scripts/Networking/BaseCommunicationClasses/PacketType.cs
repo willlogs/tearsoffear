@@ -8,5 +8,9 @@ public enum PacketType
     TRANSFORMDATA,
     EVENT,
     SCARE,
-    HIT
+    HIT,
+    DOORTOGGLE,
+    COLLECT,
+    VIS,
+    UNVIS
 }

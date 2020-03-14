@@ -13,7 +13,7 @@ public class VictimSystem : MonoBehaviour
     public Image handIcon;
     public Text plusSign;
 
-    public Sprite scareIcon;
+    public Sprite scareIcon, handSprite;
 
     Vector3 mousePos;
 

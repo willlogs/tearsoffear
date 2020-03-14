@@ -133,9 +133,11 @@ public class TCPServer : TCPConnection
 			int i = 0;
 			foreach (TCPState connection in connectionsState)
 			{
+				print(index + " " + i);
 				if (index > -1 && i == index)
 				{
 					print("skipping index: " + index);
+					i++;
 					continue;
 				}
 				mssg = mssg + "<EOF>";

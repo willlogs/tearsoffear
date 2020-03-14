@@ -39,6 +39,7 @@ public class Controller : MonoBehaviour
 
     protected virtual void Update()
     {
+        SetCursorProperties();
         if (isAlive || !normalDeath)
         {
             CheckInput();

@@ -313,6 +313,7 @@ MonoBehaviour:
   handIcon: {fileID: 0}
   plusSign: {fileID: 0}
   scareIcon: {fileID: 21300000, guid: 7001c405adad5c946a6952fe2dbca0b7, type: 3}
+  handSprite: {fileID: 0}
 --- !u!114 &526488415780206414
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -18,6 +18,7 @@ public class PredatorControl : Controller
     public float jumpSpeed, betweenScares = 60;
     public Sensors sensors;
     public bool canMove = true;
+    public AudioClip scare;
 
     bool onGround = true;
     bool onWall = false;
@@ -93,6 +94,7 @@ public class PredatorControl : Controller
             if (Input.GetMouseButtonDown(0) && vs.hasTarget && canScare)
             {
                 ms.SendScarePacket(vs.targetIndex);
+                AudioSource.PlayClipAtPoint(scare, transform.position);
                 charge = 0;
                 canScare = !canScare;
             }

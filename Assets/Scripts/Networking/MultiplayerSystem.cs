@@ -89,6 +89,15 @@ public class MultiplayerSystem : MonoBehaviour
 
         SendMessageTo(JsonUtility.ToJson(p));
     }
+
+    public void SendFlashLightPacket()
+    {
+        int index = !isCli ? 0 : conIndex + 1;
+
+        Packet p = new Packet(index, type: PacketType.FLASHTOGGLE);
+
+        SendMessageTo(JsonUtility.ToJson(p));
+    }
     #endregion
 
     private void InitializeSystem()
@@ -248,6 +257,14 @@ public class MultiplayerSystem : MonoBehaviour
                         actions.Add(new Action(1, SetVisibility));
                     }
                     break;
+
+                case PacketType.FLASHTOGGLE:
+                    int index = !isCli ? 0 : conIndex + 1;
+                    if (index != p.index)
+                    {
+                        actions.Add(new Action(p.index, SwitchFlashlight));
+                    }
+                    break;
             }
         }
         catch(Exception e)
@@ -365,5 +382,10 @@ public class MultiplayerSystem : MonoBehaviour
         {
             pc.canMove = true;
         }
+    }
+
+    private void SwitchFlashlight(int input)
+    {
+        tools.dummies[input].GetComponent<DummyPlayer>().ToggleFlashLight();
     }
 }

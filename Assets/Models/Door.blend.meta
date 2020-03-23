@@ -3,7 +3,22 @@ guid: f3a3ffe04bd8ea5459bfbc8e280e7bd8
 ModelImporter:
   serializedVersion: 19300
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: base
+    second: {fileID: 2100000, guid: e4e084ff475a2f5448d2a8f9dd8ec5dc, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: doorbase
+    second: {fileID: 2100000, guid: 8b51d7361b448664f87bf41d3a4daeb3, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: knob
+    second: {fileID: 2100000, guid: 402563c16d8e90d468cae6b5f969f722, type: 2}
   materials:
     materialImportMode: 1
     materialName: 0

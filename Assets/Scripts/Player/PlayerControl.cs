@@ -69,6 +69,7 @@ public class PlayerControl : Controller
     {
         flashLightOn = !flashLightOn;
         FlashLightSet();
+        MultiplayerSystem.instance.SendFlashLightPacket();
     }
 
     private void FlashLightSet()

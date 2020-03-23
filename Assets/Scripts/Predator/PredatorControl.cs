@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 ///
 /// TODO
@@ -14,7 +15,7 @@ using UnityEngine;
 public class PredatorControl : Controller
 {
     public KeyCode jump = KeyCode.Space;
-    public float jumpSpeed;
+    public float jumpSpeed, betweenScares = 60;
     public Sensors sensors;
     public bool canMove = true;
 
@@ -24,9 +25,23 @@ public class PredatorControl : Controller
     VictimSystem vs;
     MultiplayerSystem ms;
 
+    bool canScare = true;
+    float charge = 1;
+
+    Slider chargeSlider;
+
     protected override void Start()
     {
         base.Start();
+
+        foreach (Slider s in FindObjectsOfType<Slider>())
+        {
+            if (s.tag == "ChargingSystem")
+            {
+                chargeSlider = s;
+                break;
+            }
+        }
 
         SetSensorsActions();
 
@@ -51,6 +66,17 @@ public class PredatorControl : Controller
         {
             ClampFallSpeed();
         }
+
+        if (!canScare)
+        {
+            charge += Time.deltaTime / betweenScares;
+            if(charge >= 1)
+            {
+                charge = 1;
+                canScare = true;
+            }
+            chargeSlider.value = charge;
+        }
     }
 
     protected override void CheckInput()
@@ -63,11 +89,13 @@ public class PredatorControl : Controller
             {
                 Jump();
             }
-        }
 
-        if(Input.GetMouseButtonDown(0) && vs.hasTarget)
-        {
-            ms.SendScarePacket(vs.targetIndex);
+            if (Input.GetMouseButtonDown(0) && vs.hasTarget && canScare)
+            {
+                ms.SendScarePacket(vs.targetIndex);
+                charge = 0;
+                canScare = !canScare;
+            }
         }
     }
 

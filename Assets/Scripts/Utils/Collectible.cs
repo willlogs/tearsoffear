@@ -14,12 +14,19 @@ public class Collectible : Interactive
         list.Add(this);
         index = list.Count - 1;
         count++;
+        OnScreenConsole.Instance.Print(count + " collectibles to collect find them to win!");
+        OnScreenConsole.Instance.Print("If you cast flashlight on the ghost it can't move! you can also hear her when she's near you!");
     }
 
     public static void GetCollected(int index)
     {
         count--;
         Destroy(list[index].gameObject);
+
+        if(count > 0)
+            OnScreenConsole.Instance.Print("collectible collected! " + count + " more left");
+        else
+            OnScreenConsole.Instance.Print("People won!!! No More Collectibles!");
     }
 
     public override void Interact()

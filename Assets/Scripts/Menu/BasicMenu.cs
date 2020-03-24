@@ -11,6 +11,10 @@ public class BasicMenu : MonoBehaviour
     public Transform predSpawnPos;
     public GameObject mpSystemPrefab;
 
+    public GameObject InGameUI;
+    public GameObject PersonMenu;
+    public GameObject GhostMenu;
+
     public void HostClickHandler()
     {
         MultiplayerSystem mpSystem = InstantiateMP();
@@ -21,6 +25,9 @@ public class BasicMenu : MonoBehaviour
         mpSystem.predSpawnPos = predSpawnPos;
         mpSystem.isCli = false;
         mpSystem.con.ipAddr = ipAddressField.text;
+
+        InGameUI.SetActive(true);
+        PersonMenu.SetActive(false);
 
         mpSystem.Initialize();
 
@@ -37,6 +44,9 @@ public class BasicMenu : MonoBehaviour
         mpSystem.predSpawnPos = predSpawnPos;
         mpSystem.isCli = true;
         mpSystem.con.ipAddr = ipAddressField.text;
+
+        InGameUI.SetActive(true);
+        GhostMenu.SetActive(false);
 
         mpSystem.Initialize();
 

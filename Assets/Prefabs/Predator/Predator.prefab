@@ -527,6 +527,7 @@ MonoBehaviour:
   betweenScares: 60
   sensors: {fileID: 6224059832586142996}
   canMove: 1
+  scare: {fileID: 8300000, guid: 1eb3343be031b2945bb85404358f8e72, type: 3}
 --- !u!1 &6224059832586142998
 GameObject:
   m_ObjectHideFlags: 0

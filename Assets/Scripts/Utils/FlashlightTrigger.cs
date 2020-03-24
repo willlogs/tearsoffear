@@ -5,21 +5,26 @@ using UnityEngine;
 public class FlashlightTrigger : MonoBehaviour
 {
     public bool predInCone = false;
+    public Transform rayOrigin;
+    public bool visible = false;
 
-    private void OnTriggerEnter(Collider other)
+    Transform predator;
+
+    private void Update()
     {
-        if (other.tag == "Predator")
+        if (predInCone)
         {
             RaycastHit[] hits;
 
-            hits = Physics.RaycastAll(transform.parent.position, (other.transform.position - transform.parent.position), 30);
+            hits = Physics.RaycastAll(rayOrigin.position, (predator.position - rayOrigin.position), 30);
 
             bool hasHit = false;
             foreach (RaycastHit hit in hits)
             {
-                if(hit.collider == other)
+                if (hit.collider.gameObject == predator.gameObject)
                 {
                     hasHit = true;
+                    break;
                 }
                 else
                 {
@@ -28,11 +33,26 @@ public class FlashlightTrigger : MonoBehaviour
                 }
             }
 
-            if (!predInCone && hasHit) 
+            if (hasHit && !visible)
             {
-                predInCone = hasHit;
+                visible = true;
                 BecameVisible();
-            }            
+            }
+
+            if (!hasHit)
+            {
+                visible = false;
+                BecameInvisible();
+            }
+        }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.tag == "Predator")
+        {
+            predInCone = true;
+            predator = other.transform;
         }
     }
 
@@ -40,8 +60,9 @@ public class FlashlightTrigger : MonoBehaviour
     {
         if(other.tag == "Predator" && predInCone)
         {
+            visible = false;
             predInCone = false;
-            BecameUnvisible();
+            BecameInvisible();
         }
     }
 
@@ -50,7 +71,7 @@ public class FlashlightTrigger : MonoBehaviour
         MultiplayerSystem.instance.SendVisPacket(true);
     }
 
-    private void BecameUnvisible()
+    private void BecameInvisible()
     {
         MultiplayerSystem.instance.SendVisPacket(false);
     }

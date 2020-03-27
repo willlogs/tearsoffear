@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using DG.Tweening;
 
 public class MultiplayerTools : MonoBehaviour
 {
@@ -33,7 +34,13 @@ public class MultiplayerTools : MonoBehaviour
                 if (!shouldSkip)
                 {
                     dummies[i].transform.rotation = td.rotation;
-                    dummies[i].transform.position = dummies[i].transform.position + (diff * Time.deltaTime / smoothMoveDuration);
+                    if (td.hasTween)
+                    {
+                        td.tween.Kill();
+                    }
+
+                    td.tween = dummies[i].transform.DOMove(td.position, smoothMoveDuration);
+                    td.hasTween = true;
 
                     // TODO: optimize this with a list of dummies
                     dummies[i].GetComponent<DummyAnimations>().sfx.Walk();

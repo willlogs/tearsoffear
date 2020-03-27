@@ -109,6 +109,7 @@ public class TCPServer : TCPConnection
 		catch(Exception e)
 		{
 			Debug.LogError(e.ToString());
+			StartReceiving((TCPState)ar.AsyncState);
 		}
 	}
 
@@ -133,10 +134,8 @@ public class TCPServer : TCPConnection
 			int i = 0;
 			foreach (TCPState connection in connectionsState)
 			{
-				print(index + " " + i);
 				if (index > -1 && i == index)
 				{
-					print("skipping index: " + index);
 					i++;
 					continue;
 				}

@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 2356984135607175189}
   - component: {fileID: 9121922339734743791}
   - component: {fileID: 68603843099105328}
+  - component: {fileID: 6489093212030416577}
   m_Layer: 11
   m_Name: dummyPredator
   m_TagString: Predator
@@ -113,6 +114,30 @@ CapsuleCollider:
   m_Height: 2.8
   m_Direction: 1
   m_Center: {x: 0, y: 0.38, z: 0}
+--- !u!114 &6489093212030416577
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2356984135607175185}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61663c5782babdc4eaa2bf42b921eac8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &5284311710060845878
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4848536000785705452}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61663c5782babdc4eaa2bf42b921eac8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1557301138650074005
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -179,6 +204,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: SFX
+      objectReference: {fileID: 0}
+    - target: {fileID: 1557301137618719395, guid: a0d4e3d9afc3d974ea0d7ee67c68cf34,
+        type: 3}
+      propertyPath: m_Volume
+      value: 0.02
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a0d4e3d9afc3d974ea0d7ee67c68cf34, type: 3}
@@ -280,6 +310,12 @@ PrefabInstance:
 --- !u!4 &2633018366795256015 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -4216859302048453862, guid: d20fef2de8adc1c4fbf8b19612d96027,
+    type: 3}
+  m_PrefabInstance: {fileID: 7057396319491505109}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &4848536000785705452 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2502203975881118265, guid: d20fef2de8adc1c4fbf8b19612d96027,
     type: 3}
   m_PrefabInstance: {fileID: 7057396319491505109}
   m_PrefabAsset: {fileID: 0}

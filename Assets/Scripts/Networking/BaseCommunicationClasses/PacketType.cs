@@ -12,6 +12,7 @@ public enum PacketType
     DOORTOGGLE,
     COLLECT,
     VIS,
-    UNVIS,
-    FLASHTOGGLE
+    INVIS,
+    FLASHTOGGLE,
+    ACK
 }

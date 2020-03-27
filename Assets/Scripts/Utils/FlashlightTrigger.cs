@@ -12,38 +12,13 @@ public class FlashlightTrigger : MonoBehaviour
 
     private void Update()
     {
-        if (predInCone)
+        if(VisSensor.isVis && predInCone)
         {
-            RaycastHit[] hits;
-
-            hits = Physics.RaycastAll(rayOrigin.position, (predator.position - rayOrigin.position), 30);
-
-            bool hasHit = false;
-            foreach (RaycastHit hit in hits)
-            {
-                if (hit.collider.gameObject == predator.gameObject)
-                {
-                    hasHit = true;
-                    break;
-                }
-                else
-                {
-                    if (hit.collider.gameObject.layer == 9) continue;
-                    else break;
-                }
-            }
-
-            if (hasHit && !visible)
-            {
-                visible = true;
-                BecameVisible();
-            }
-
-            if (!hasHit)
-            {
-                visible = false;
-                BecameInvisible();
-            }
+            BecameVisible();
+        }
+        else
+        {
+            BecameInvisible();
         }
     }
 
@@ -60,7 +35,6 @@ public class FlashlightTrigger : MonoBehaviour
     {
         if(other.tag == "Predator" && predInCone)
         {
-            visible = false;
             predInCone = false;
             BecameInvisible();
         }
@@ -68,11 +42,19 @@ public class FlashlightTrigger : MonoBehaviour
 
     private void BecameVisible()
     {
-        MultiplayerSystem.instance.SendVisPacket(true);
+        if (!visible)
+        {
+            visible = true;
+            MultiplayerSystem.instance.SendVisPacket(true);
+        }
     }
 
     private void BecameInvisible()
     {
-        MultiplayerSystem.instance.SendVisPacket(false);
+        if (visible)
+        {
+            visible = false;
+            MultiplayerSystem.instance.SendVisPacket(false);
+        }
     }
 }

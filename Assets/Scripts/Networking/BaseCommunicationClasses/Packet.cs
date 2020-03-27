@@ -13,9 +13,14 @@ public class Packet
 
     public int index; // index of the dummy in the scene
     public int targetIndex;
+    public string targetString;
 
-    public Packet(int index, TransformData td = null, bool tdSet = false, PacketType type = PacketType.TRANSFORMDATA, bool ip = false, int sIndex = 0)
+    public string hash;
+
+    public Packet(int index, string hash,TransformData td = null, bool tdSet = false, PacketType type = PacketType.TRANSFORMDATA, bool ip = false, int sIndex = 0, string targetString = "")
     {
+        this.targetString = targetString;
+        this.hash = hash;
         this.isPred = ip;
         this.index = index;
         this.td = td;

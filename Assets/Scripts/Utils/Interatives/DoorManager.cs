@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class DoorManager : MonoBehaviour
 {
-    public List<Door> doors = new List<Door>();
+    public static List<Door> doors = new List<Door>();
 
     public static DoorManager instance;
 
@@ -16,17 +16,23 @@ public class DoorManager : MonoBehaviour
         foreach(Door d in FindObjectsOfType<Door>())
         {
             doors.Add(d);
-            d.index = i++;
+            d.indexx = i++;
         }
     }
 
-    public void Toggle(int index)
+    public static void Toggle(string name)
     {
-        doors[index].ToggleState();
+        foreach(Door d in doors)
+        {
+            if(d.name == name)
+            {
+                d.ToggleState();
+            }
+        }
     }
 
-    public void Toggled(int index)
+    public void Toggled(string name)
     {
-        MultiplayerSystem.instance.SendDoorTogglePacket(index);
+        MultiplayerSystem.instance.SendDoorTogglePacket(name);
     }
 }

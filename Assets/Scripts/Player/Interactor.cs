@@ -79,6 +79,7 @@ public class Interactor : MonoBehaviour
 
     private void SetPlusSign()
     {
+        hasTarget = false;
         plusSign.enabled = true;
         iconPlace.enabled = false;
     }

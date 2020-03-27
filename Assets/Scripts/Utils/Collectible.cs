@@ -7,35 +7,39 @@ public class Collectible : Interactive
     public static int count;
     public static List<Collectible> list = new List<Collectible>();
 
-    public int index;
+    public int indexx;
 
     private void Start()
     {
         list.Add(this);
-        index = list.Count - 1;
+        indexx = list.Count - 1;
         count++;
-        OnScreenConsole.Instance.Print(count + " collectibles to collect find them to win!");
-        OnScreenConsole.Instance.Print("If you cast flashlight on the ghost it can't move! you can also hear her when she's near you!");
     }
 
-    public static void GetCollected(int index)
+    public static void GetCollected(string name)
     {
-        count--;
-        Destroy(list[index].gameObject);
-
-        if(count > 0)
-            OnScreenConsole.Instance.Print("collectible collected! " + count + " more left");
-        else
-            OnScreenConsole.Instance.Print("People won!!! No More Collectibles!");
+        foreach(Collectible c in list)
+        {
+            if (c.name == name)
+            {
+                Destroy(c.gameObject);
+                count--;
+            }
+        }
     }
 
     public override void Interact()
     {
-        MultiplayerSystem.instance.SendCollectPacket(index);
-        GetCollected(index);
+        MultiplayerSystem.instance.SendCollectPacket(gameObject.name);
+        GetCollected(gameObject.name);
     }
 
     public override void GhostInteract()
+    {
+
+    }
+
+    protected override void ApplyState()
     {
 
     }

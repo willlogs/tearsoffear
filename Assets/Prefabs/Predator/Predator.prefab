@@ -855,6 +855,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: SFX
       objectReference: {fileID: 0}
+    - target: {fileID: 1557301137618719395, guid: a0d4e3d9afc3d974ea0d7ee67c68cf34,
+        type: 3}
+      propertyPath: m_Volume
+      value: 0.02
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a0d4e3d9afc3d974ea0d7ee67c68cf34, type: 3}
 --- !u!4 &7106582473960873696 stripped

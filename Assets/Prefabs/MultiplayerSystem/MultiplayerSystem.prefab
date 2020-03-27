@@ -117,13 +117,10 @@ MonoBehaviour:
     type: 3}
   spawnPositions: {fileID: 0}
   predSpawnPos: {fileID: 0}
-  dummies: []
-  transformData: []
-  cli: {fileID: 7331734719013491548}
-  srv: {fileID: 7331734719013491549}
+  con: {fileID: 0}
+  tools: {fileID: 0}
   isCli: 0
-  isTest: 0
-  printLastPacket: 0
+  printLastPacket: 1
   conIndex: 0
 --- !u!1 &7331734719258681993
 GameObject:

@@ -29,8 +29,6 @@ public class MultiplayerTools : MonoBehaviour
 
             if (td.isSet)
             {
-                Vector3 diff = td.position - dummies[i].transform.position;
-
                 if (!shouldSkip)
                 {
                     dummies[i].transform.rotation = td.rotation;
@@ -39,17 +37,14 @@ public class MultiplayerTools : MonoBehaviour
                         td.tween.Kill();
                     }
 
-                    td.tween = dummies[i].transform.DOMove(td.position, smoothMoveDuration);
+                    td.tween = dummies[i].transform.DOMove(td.position, smoothMoveDuration).OnKill(() => {
+                        td.hasTween = false;
+                    });
                     td.hasTween = true;
 
                     // TODO: optimize this with a list of dummies
                     dummies[i].GetComponent<DummyAnimations>().sfx.Walk();
                 }
-
-                diff = td.position - dummies[i].transform.position;
-
-                if (diff.magnitude < maxErr)
-                    td.isSet = false;
             }
 
             i++;

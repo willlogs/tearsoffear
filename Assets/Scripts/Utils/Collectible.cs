@@ -18,11 +18,12 @@ public class Collectible : Interactive
 
     public static void GetCollected(string name)
     {
-        foreach(Collectible c in list)
-        {
-            if (c.name == name)
+        for(int i = list.Count - 1; i >= 0; i--)
+        {            
+            if (list[i].name == name)
             {
-                Destroy(c.gameObject);
+                Destroy(list[i].gameObject);
+                list.RemoveAt(i);
                 count--;
             }
         }

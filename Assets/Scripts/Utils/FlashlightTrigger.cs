@@ -9,10 +9,11 @@ public class FlashlightTrigger : MonoBehaviour
     public bool visible = false;
 
     Transform predator;
+    bool isVis = false;
 
     private void Update()
     {
-        if(VisSensor.isVis && predInCone)
+        if(visible && predInCone)
         {
             BecameVisible();
         }
@@ -42,18 +43,18 @@ public class FlashlightTrigger : MonoBehaviour
 
     private void BecameVisible()
     {
-        if (!visible)
+        if (!isVis)
         {
-            visible = true;
+            isVis = true;
             MultiplayerSystem.instance.SendVisPacket(true);
         }
     }
 
     private void BecameInvisible()
     {
-        if (visible)
+        if (isVis)
         {
-            visible = false;
+            isVis = false;
             MultiplayerSystem.instance.SendVisPacket(false);
         }
     }

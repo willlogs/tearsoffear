@@ -22,6 +22,7 @@ public class DoorManager : MonoBehaviour
 
     public static void Toggle(string name)
     {
+        print("door: " + name);
         foreach(Door d in doors)
         {
             if(d.name == name)

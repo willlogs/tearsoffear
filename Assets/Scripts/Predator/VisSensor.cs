@@ -6,15 +6,41 @@ public class VisSensor : MonoBehaviour
 {
     public static bool isVis = false;
 
-    private void OnBecameVisible()
+    public Transform player;
+
+    private void Start()
     {
-        print("vis");
-        isVis = true;
+        player = FindObjectOfType<PlayerControl>().transform;
     }
 
-    private void OnBecameInvisible()
+    private void Update()
     {
-        print("invis");
-        isVis = false;
+        Vector3 diff = player.position - transform.position;
+        diff = diff.normalized;
+        RaycastHit hit;
+
+        if(Physics.Raycast(transform.position, diff, out hit))
+        {
+            if(hit.transform == player)
+            {
+                isVis = true;
+            }
+            else
+            {
+                isVis = false;
+            }
+        }
     }
+
+    //private void OnBecameVisible()
+    //{
+    //    print("vis");
+    //    isVis = true;
+    //}
+
+    //private void OnBecameInvisible()
+    //{
+    //    print("invis");
+    //    isVis = false;
+    //}
 }

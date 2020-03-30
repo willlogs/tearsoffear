@@ -13,6 +13,12 @@ public class PlayerControl : Controller
     public Shield shield;
     public Interactor interactor;
 
+    // UV light
+    public FlashlightTrigger fl;
+    public float flashLightCharge = 1;
+    public Color defaultFLColor;
+    public bool uvOn = false;
+
     public void GetScared()
     {
         se.Scare();
@@ -22,6 +28,9 @@ public class PlayerControl : Controller
     protected override void Start()
     {
         FlashLightSet();
+
+        defaultFLColor = flashLight.color;
+
         animations = GetComponent<DummyAnimations>();
         shield.OnDeactivated += DeativateShield;
     }
@@ -62,6 +71,22 @@ public class PlayerControl : Controller
         if (Input.GetMouseButtonDown(0))
         {
             interactor.Interact();
+        }
+
+        if (Input.GetMouseButtonDown(1))
+        {
+            fl.visible = true;
+            flashLight.color = Color.cyan;
+            uvOn = true;
+            MultiplayerSystem.instance.SendToggleUVPacket();
+        }
+
+        if (Input.GetMouseButtonUp(1))
+        {
+            fl.visible = false;
+            flashLight.color = defaultFLColor;
+            uvOn = false;
+            MultiplayerSystem.instance.SendToggleUVPacket();
         }
     }
 

@@ -5424,7 +5424,7 @@ MonoBehaviour:
   maxYRot: 180
   minXRot: 90
   maxXRot: 270
-  deathWait: 30
+  deathWait: 8
   rb: {fileID: 7535978292779560181}
   isMoving: 0
   isAlive: 1
@@ -5437,13 +5437,16 @@ MonoBehaviour:
   activateShield: 118
   sprintMultiplier: 1.5
   jumpSpeed: 0
-  flashLight: {fileID: 0}
+  flashLight: {fileID: 1386910764341134195}
   flashLightOn: 1
   shielded: 0
   animations: {fileID: 2344822314456793351}
   se: {fileID: 2962257463699038582}
   shield: {fileID: 992926169}
   interactor: {fileID: 1313022381}
+  fl: {fileID: 2039615889942985703}
+  flashLightCharge: 1
+  defaultFLColor: {r: 0, g: 0, b: 0, a: 0}
 --- !u!114 &2344822314456793351
 MonoBehaviour:
   m_ObjectHideFlags: 0

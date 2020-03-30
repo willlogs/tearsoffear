@@ -1,25 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
-
-public class TCPMessage
-{
-    public string mssg;
-    public string hash;
-
-    public TCPMessage(string mssg, string hash)
-    {
-        this.mssg = mssg;
-        this.hash = hash;
-    }
-}
 
 public class MultiplayerSystem : MonoBehaviour
 {
     #region Public Variables
     public static MultiplayerSystem instance;
     public static char[] chars = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0' };
-    public static List<TCPMessage> messageBuffer = new List<TCPMessage>();
 
     public static string RandString(int length_)
     {
@@ -40,6 +28,8 @@ public class MultiplayerSystem : MonoBehaviour
     public GameObject playerPrefab, dummyPrefab, predatorPref, dummyPredatorPref;
     public PositionKeeper spawnPositions;
     public Transform predSpawnPos;
+
+    public List<TCPMessage> messageBuffer = new List<TCPMessage>();
 
     // Connection
     public TCPConnection con;
@@ -65,9 +55,8 @@ public class MultiplayerSystem : MonoBehaviour
     bool newPacket = false;
 
     // Message Timeout
-    float timeout = 4;
-    float time = 0;
-    bool timerOn = false;
+    float timeout = 2;
+    int windowSize = 5;
     #endregion
 
     #region public methods
@@ -83,10 +72,20 @@ public class MultiplayerSystem : MonoBehaviour
         tools.predSpawnPos = predSpawnPos;
 
         InitializeSystem();
+        InvokeRepeating(nameof(FlushMessages), 0, 0.2f);
         instance = this;
     }
 
     #region Send Packets
+    public void SendToggleUVPacket()
+    {
+        int index = !isCli ? 0 : conIndex + 1;
+
+        Packet p = new Packet(index, RandString(10), type: PacketType.UV);
+
+        messageBuffer.Add(new TCPMessage(JsonUtility.ToJson(p), p.hash));
+    }
+
     public void SendScarePacket(int targetIndex)
     {
         int index = !isCli ? 0 : conIndex + 1;
@@ -94,8 +93,6 @@ public class MultiplayerSystem : MonoBehaviour
         Packet p = new Packet(index, RandString(10), sIndex: targetIndex, type: PacketType.SCARE);
 
         messageBuffer.Add( new TCPMessage(JsonUtility.ToJson(p), p.hash) );
-
-        StartSending();
     }
 
     public void SendDoorTogglePacket(string name)
@@ -105,8 +102,6 @@ public class MultiplayerSystem : MonoBehaviour
         Packet p = new Packet(index, RandString(10), targetString: name, type: PacketType.DOORTOGGLE);
 
         messageBuffer.Add(new TCPMessage(JsonUtility.ToJson(p), p.hash));
-
-        StartSending();
     }
 
     public void SendCollectPacket(string name)
@@ -116,8 +111,6 @@ public class MultiplayerSystem : MonoBehaviour
         Packet p = new Packet(index, RandString(10), targetString: name, type: PacketType.COLLECT);
 
         messageBuffer.Add(new TCPMessage(JsonUtility.ToJson(p), p.hash));
-
-        StartSending();
     }
 
     public void SendVisPacket(bool isvis)
@@ -129,8 +122,6 @@ public class MultiplayerSystem : MonoBehaviour
         messageBuffer.Add(new TCPMessage(JsonUtility.ToJson(p), p.hash));
 
         OnScreenConsole.Instance.Print("vis packet sent " + isvis);
-
-        StartSending();
     }
 
     public void SendFlashLightPacket()
@@ -140,8 +131,6 @@ public class MultiplayerSystem : MonoBehaviour
         Packet p = new Packet(index, RandString(10), type: PacketType.FLASHTOGGLE);
 
         messageBuffer.Add(new TCPMessage(JsonUtility.ToJson(p), p.hash));
-
-        StartSending();
     }
 
     public void SendHitPacket()
@@ -151,8 +140,6 @@ public class MultiplayerSystem : MonoBehaviour
         Packet p = new Packet(index, RandString(10), type: PacketType.HIT, sIndex: 0);
 
         messageBuffer.Add(new TCPMessage(JsonUtility.ToJson(p), p.hash));
-
-        StartSending();
     }
     #endregion
 
@@ -173,8 +160,6 @@ public class MultiplayerSystem : MonoBehaviour
             tools.AddMonster(0);
             StartServer();
         }
-
-        StartSending();
     }
 
     private void StartServer()
@@ -190,23 +175,6 @@ public class MultiplayerSystem : MonoBehaviour
             PrintLastPacket();
 
         DoActions();
-        if (connected)
-        {
-            SendTD();
-            tools.UpdateTransforms(isCli, conIndex);
-        }
-
-        if (timerOn)
-        {
-            time += Time.deltaTime;
-            if(time > timeout)
-            {
-                time = 0;
-                timerOn = false;
-                // packet lost!
-                StartSending();
-            }
-        }
     }
 
     private void DoActions()
@@ -238,14 +206,8 @@ public class MultiplayerSystem : MonoBehaviour
             td.isSet = true;
             Packet p = new Packet(index, "", td: td, tdSet: true);
 
-            if (isCli)
-            {
-                con.SendMessage_(JsonUtility.ToJson(p));
-            }
-            else
-            {
-                con.BroadCastMessage(JsonUtility.ToJson(p));
-            }
+            // if you want to make it totally multiplayer change this part for the server : broadcast
+            messageBuffer.Add(new TCPMessage(JsonUtility.ToJson(p), ""));
         }
     }
 
@@ -265,6 +227,14 @@ public class MultiplayerSystem : MonoBehaviour
 
     private void OnRecieveData(string data)
     {
+        foreach(string s in Packer.Parse(data))
+        {
+            ParseMessage(s);
+        }
+    }
+
+    private void ParseMessage(string data)
+    {
         try
         {
             Packet p = JsonUtility.FromJson<Packet>(data);
@@ -274,108 +244,83 @@ public class MultiplayerSystem : MonoBehaviour
                 lastPacket = p.hash + " " + p.type.ToString();
                 newPacket = true;
             }
+            //if (!isCli)
+            //    con.BroadCastMessage(data, p.index - 1);
 
-            if (p.type == PacketType.ACK)
+            switch (p.type)
             {
-                // remove the last message from buffer and send the next one
-
-                int i = 0;
-                foreach(TCPMessage m in messageBuffer)
-                {
-                    if(m.hash == p.hash)
+                case PacketType.TRANSFORMDATA:
+                    if (p.tdSet)
                     {
-                        messageBuffer.RemoveAt(i);
-
-                        // reset the timeout timer
-                        timerOn = false;
-                        time = 0;
-
-                        StartSending();
-                        break;
+                        SetTD(p);
+                        actions.Add(new Action(0, UpdateTD));
                     }
-                    i++;
-                }
-            }
-            else
-            {
-                if (p.hash.Length > 0)
-                {
-                    SendMessageTo(JsonUtility.ToJson(new Packet(!isCli ? 0 : conIndex + 1, p.hash, type: PacketType.ACK)), !isCli?p.index - 1:p.index);
-                }
+                    break;
 
-                if (!isCli)
-                    con.BroadCastMessage(data, p.index - 1);
+                case PacketType.NEWCLI:
+                    if (p.isPred)
+                    {
+                        actions.Add(new Action(-1, tools.AddDummyMonster));
+                    }
+                    else
+                    {
+                        actions.Add(new Action(-1, tools.AddDummy));
+                    }
+                    break;
 
-                switch (p.type)
-                {
-                    case PacketType.NEWCLI:
-                        if (p.isPred)
-                        {
-                            actions.Add(new Action(-1, tools.AddDummyMonster));
-                        }
-                        else
-                        {
-                            actions.Add(new Action(-1, tools.AddDummy));
-                        }
-                        break;
+                case PacketType.SCARE:
+                    if (p.targetIndex == conIndex + 1)
+                    {
+                        actions.Add(new Action(-1, GetScared));
+                    }
+                    break;
 
-                    case PacketType.TRANSFORMDATA:
-                        if (p.tdSet)
-                        {
-                            SetTD(p);
-                        }
-                        break;
+                // TODO: fix when pred is chosen randomly
+                case PacketType.HIT:
+                    if (!isCli)
+                    {
+                        tools.dummies[0].GetComponent<PredatorControl>().Die();
+                    }
+                    break;
 
-                    case PacketType.SCARE:
-                        if (p.targetIndex == conIndex + 1)
-                        {
-                            actions.Add(new Action(-1, GetScared));
-                        }
-                        break;
+                case PacketType.DOORTOGGLE:
+                    actions.Add(new Action(p.targetString, ToggleDoor));
+                    break;
 
-                    // TODO: fix when pred is chosen randomly
-                    case PacketType.HIT:
-                        if (!isCli)
-                        {
-                            tools.dummies[0].GetComponent<PredatorControl>().Die();
-                        }
-                        break;
+                case PacketType.COLLECT:
+                    actions.Add(new Action(p.targetString, CollectCollectable));
+                    break;
 
-                    case PacketType.DOORTOGGLE:
-                        actions.Add(new Action(p.targetString, ToggleDoor));
-                        break;
+                case PacketType.VIS:
+                    if (!isCli)
+                    {
+                        print("vis");
+                        actions.Add(new Action(0, SetVisibility));
+                    }
+                    break;
 
-                    case PacketType.COLLECT:
-                        actions.Add(new Action(p.targetString, CollectCollectable));
-                        break;
+                case PacketType.INVIS:
+                    if (!isCli)
+                    {
+                        print("vis");
+                        actions.Add(new Action(1, SetVisibility));
+                    }
+                    break;
 
-                    case PacketType.VIS:
-                        if (!isCli)
-                        {
-                            print("vis");
-                            actions.Add(new Action(0, SetVisibility));
-                        }
-                        break;
+                case PacketType.FLASHTOGGLE:
+                    int index = !isCli ? 0 : conIndex + 1;
+                    if (index != p.index)
+                    {
+                        actions.Add(new Action(p.index, SwitchFlashlight));
+                    }
+                    break;
 
-                    case PacketType.INVIS:
-                        if (!isCli)
-                        {
-                            print("vis");
-                            actions.Add(new Action(1, SetVisibility));
-                        }
-                        break;
-
-                    case PacketType.FLASHTOGGLE:
-                        int index = !isCli ? 0 : conIndex + 1;
-                        if (index != p.index)
-                        {
-                            actions.Add(new Action(p.index, SwitchFlashlight));
-                        }
-                        break;
-                }
+                case PacketType.UV:
+                    actions.Add(new Action(p.index, UvSet));
+                    break;
             }
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             print("parsing err: " + e);
             print(data);
@@ -411,18 +356,29 @@ public class MultiplayerSystem : MonoBehaviour
         connected = true;
     }
 
-    private void StartSending()
+    private void FlushMessages()
     {
-        if (messageBuffer.Count > 0 && !timerOn)
+        if (connected)
         {
-            SendMessageTo(messageBuffer[0].mssg);
-            timerOn = true;
+            SendTD();
+            if (messageBuffer.Count > 0)
+            {
+                SendMessageTo(Packer.Pack(messageBuffer.ToArray()));
+                messageBuffer.Clear();
+            }
         }
     }
 
     private void SendMessageTo(string mssg, int i = 0)
     {
         con.SendMessage_(mssg, i);
+    }
+
+    private void SendMessageTo(TCPMessage mssg, int i = 0)
+    {
+        print("sending");
+        mssg.timerOn = true;
+        con.SendMessage_(mssg.mssg, i);
     }
 
     private void InstantiateSrv(int input)
@@ -503,5 +459,15 @@ public class MultiplayerSystem : MonoBehaviour
     private void SwitchFlashlight(int input)
     {
         tools.dummies[input].GetComponent<DummyPlayer>().ToggleFlashLight();
+    }
+
+    private void UvSet(int input)
+    {
+        tools.dummies[input].GetComponent<DummyPlayer>().UVToggle();
+    }
+
+    private void UpdateTD(int input)
+    {
+        tools.UpdateTransforms(isCli, conIndex);
     }
 }

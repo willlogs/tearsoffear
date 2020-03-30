@@ -14,5 +14,5 @@ public enum PacketType
     VIS,
     INVIS,
     FLASHTOGGLE,
-    ACK
+    UV
 }

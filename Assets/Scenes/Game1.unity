@@ -45426,7 +45426,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1039884297, guid: 8b92acca81a6ded41b3e3a915302803e, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 402.7
+      value: 643.2
       objectReference: {fileID: 0}
     - target: {fileID: 1039884297, guid: 8b92acca81a6ded41b3e3a915302803e, type: 3}
       propertyPath: m_SizeDelta.x

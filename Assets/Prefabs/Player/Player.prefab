@@ -4887,6 +4887,7 @@ GameObject:
   - component: {fileID: 8120553023991112336}
   - component: {fileID: 1002887973743220902}
   - component: {fileID: 6833772798405649503}
+  - component: {fileID: 5623535790461445396}
   m_Layer: 9
   m_Name: flashLight
   m_TagString: Player
@@ -4956,6 +4957,102 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+--- !u!82 &5623535790461445396
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5110079433119633539}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 8300000, guid: 80fc1f35b57b3ca42b95b698233b8047, type: 3}
+  m_PlayOnAwake: 0
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 1
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 0.1
+  MaxDistance: 20
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!64 &3456706198125559896
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -5446,7 +5543,11 @@ MonoBehaviour:
   interactor: {fileID: 1313022381}
   fl: {fileID: 2039615889942985703}
   flashLightCharge: 1
+  dechargeIn: 5
   defaultFLColor: {r: 0, g: 0, b: 0, a: 0}
+  uvOn: 0
+  flchargeSlider: {fileID: 0}
+  uvSound: {fileID: 5623535790461445396}
 --- !u!114 &2344822314456793351
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5971,15 +6072,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: fbc735995530acd4da1cb39d06a7aa32, type: 3}
---- !u!1 &6399238818449637928 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: -927199367670048503, guid: fbc735995530acd4da1cb39d06a7aa32,
-    type: 3}
-  m_PrefabInstance: {fileID: 3165824768584424225}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &7968539084677328955 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -4216859302048453862, guid: fbc735995530acd4da1cb39d06a7aa32,
+    type: 3}
+  m_PrefabInstance: {fileID: 3165824768584424225}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &6399238818449637928 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -927199367670048503, guid: fbc735995530acd4da1cb39d06a7aa32,
     type: 3}
   m_PrefabInstance: {fileID: 3165824768584424225}
   m_PrefabAsset: {fileID: 0}
@@ -6062,6 +6163,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4de350ec953c96a43be3835d801cce2b, type: 3}
+--- !u!4 &9963345 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7839287623605741624, guid: 4de350ec953c96a43be3835d801cce2b,
+    type: 3}
+  m_PrefabInstance: {fileID: 7839287623615704937}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &2962257463699038582 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 5032407514599984671, guid: 4de350ec953c96a43be3835d801cce2b,
@@ -6074,9 +6181,3 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2db4eddc5af88f94283c999fd4b40d6c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!4 &9963345 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 7839287623605741624, guid: 4de350ec953c96a43be3835d801cce2b,
-    type: 3}
-  m_PrefabInstance: {fileID: 7839287623615704937}
-  m_PrefabAsset: {fileID: 0}

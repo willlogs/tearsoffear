@@ -16,8 +16,11 @@ public class PlayerControl : Controller
     // UV light
     public FlashlightTrigger fl;
     public float flashLightCharge = 1;
+    public float dechargeIn = 5; // in minutes
     public Color defaultFLColor;
     public bool uvOn = false;
+    public SlidersSinglton flchargeSlider;
+    public AudioSource uvSound;
 
     public void GetScared()
     {
@@ -28,11 +31,28 @@ public class PlayerControl : Controller
     protected override void Start()
     {
         FlashLightSet();
+        flchargeSlider = SlidersSinglton.GetByName("FL");
 
         defaultFLColor = flashLight.color;
 
         animations = GetComponent<DummyAnimations>();
         shield.OnDeactivated += DeativateShield;
+    }
+
+    protected override void Update()
+    {
+        base.Update();
+
+        if (flashLightOn)
+        {
+            flashLightCharge -= uvOn? Time.deltaTime / 5 / 60 * 10: Time.deltaTime / 5 / 60;
+            if (flashLightCharge <= 0)
+            {
+                flashLightCharge = 0;
+                ToggleFlashLight();
+            }
+            flchargeSlider.slider.value = flashLightCharge;
+        }
     }
 
     protected override void CheckInput()
@@ -75,10 +95,14 @@ public class PlayerControl : Controller
 
         if (Input.GetMouseButtonDown(1))
         {
-            fl.visible = true;
-            flashLight.color = Color.cyan;
-            uvOn = true;
-            MultiplayerSystem.instance.SendToggleUVPacket();
+            if (flashLightOn)
+            {
+                fl.visible = true;
+                flashLight.color = Color.cyan;
+                uvOn = true;
+                uvSound.Play();
+                MultiplayerSystem.instance.SendToggleUVPacket();
+            }
         }
 
         if (Input.GetMouseButtonUp(1))
@@ -86,15 +110,29 @@ public class PlayerControl : Controller
             fl.visible = false;
             flashLight.color = defaultFLColor;
             uvOn = false;
+            uvSound.Stop();
             MultiplayerSystem.instance.SendToggleUVPacket();
         }
     }
 
     private void ToggleFlashLight()
     {
-        flashLightOn = !flashLightOn;
-        FlashLightSet();
-        MultiplayerSystem.instance.SendFlashLightPacket();
+        if (flashLightOn || (!flashLightOn && flashLightCharge > 0))
+        {
+            flashLightOn = !flashLightOn;
+
+            if(!flashLightOn && uvOn)
+            {
+                fl.visible = false;
+                flashLight.color = defaultFLColor;
+                uvOn = false;
+                uvSound.Stop();
+                MultiplayerSystem.instance.SendToggleUVPacket();
+            }
+
+            FlashLightSet();
+            MultiplayerSystem.instance.SendFlashLightPacket();
+        }
     }
 
     private void FlashLightSet()

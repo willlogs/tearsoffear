@@ -9,11 +9,11 @@ public class MultiplayerSystem : MonoBehaviour
     public static MultiplayerSystem instance;
     public static char[] chars = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0' };
 
-    public static string RandString(int length_)
+    public static string GenRandString(int length_)
     {
         string o = "";
 
-        for(int i = 0; i < length_; i++)
+        for (int i = 0; i < length_; i++)
         {
             o += chars[UnityEngine.Random.Range(0, chars.Length)];
         }
@@ -21,24 +21,28 @@ public class MultiplayerSystem : MonoBehaviour
         return o;
     }
 
-    // Prefabs and SpawnPoses
+    // Acion delegates
     public delegate void action(int input);
     public delegate void strAction(string str);
 
+    // Prefabs and SpawnPoses
     public GameObject playerPrefab, dummyPrefab, predatorPref, dummyPredatorPref;
     public PositionKeeper spawnPositions;
     public Transform predSpawnPos;
 
+    // Message buffer
     public List<TCPMessage> messageBuffer = new List<TCPMessage>();
 
     // Connection
     public TCPConnection con;
 
+    // Tools - managing dummies
     public MultiplayerTools tools;
 
     // Options
     public bool isCli, printLastPacket = true;
     public int conIndex = 0; // conIndex + 1 is the index of the dummy in the scene (if isCli is on) - index of srv is 0
+
     #endregion
 
     #region Private Variables
@@ -81,7 +85,7 @@ public class MultiplayerSystem : MonoBehaviour
     {
         int index = !isCli ? 0 : conIndex + 1;
 
-        Packet p = new Packet(index, RandString(10), type: PacketType.UV);
+        Packet p = new Packet(index, GenRandString(10), type: PacketType.UV);
 
         messageBuffer.Add(new TCPMessage(JsonUtility.ToJson(p), p.hash));
     }
@@ -90,7 +94,7 @@ public class MultiplayerSystem : MonoBehaviour
     {
         int index = !isCli ? 0 : conIndex + 1;
 
-        Packet p = new Packet(index, RandString(10), sIndex: targetIndex, type: PacketType.SCARE);
+        Packet p = new Packet(index, GenRandString(10), sIndex: targetIndex, type: PacketType.SCARE);
 
         messageBuffer.Add( new TCPMessage(JsonUtility.ToJson(p), p.hash) );
     }
@@ -99,7 +103,7 @@ public class MultiplayerSystem : MonoBehaviour
     {
         int index = !isCli ? 0 : conIndex + 1;
 
-        Packet p = new Packet(index, RandString(10), targetString: name, type: PacketType.DOORTOGGLE);
+        Packet p = new Packet(index, GenRandString(10), targetString: name, type: PacketType.DOORTOGGLE);
 
         messageBuffer.Add(new TCPMessage(JsonUtility.ToJson(p), p.hash));
     }
@@ -108,7 +112,7 @@ public class MultiplayerSystem : MonoBehaviour
     {
         int index = !isCli ? 0 : conIndex + 1;
 
-        Packet p = new Packet(index, RandString(10), targetString: name, type: PacketType.COLLECT);
+        Packet p = new Packet(index, GenRandString(10), targetString: name, type: PacketType.COLLECT);
 
         messageBuffer.Add(new TCPMessage(JsonUtility.ToJson(p), p.hash));
     }
@@ -117,7 +121,7 @@ public class MultiplayerSystem : MonoBehaviour
     {
         int index = !isCli ? 0 : conIndex + 1;
 
-        Packet p = new Packet(index, RandString(10), type: isvis?PacketType.VIS:PacketType.INVIS);
+        Packet p = new Packet(index, GenRandString(10), type: isvis?PacketType.VIS:PacketType.INVIS);
 
         messageBuffer.Add(new TCPMessage(JsonUtility.ToJson(p), p.hash));
 
@@ -128,7 +132,7 @@ public class MultiplayerSystem : MonoBehaviour
     {
         int index = !isCli ? 0 : conIndex + 1;
 
-        Packet p = new Packet(index, RandString(10), type: PacketType.FLASHTOGGLE);
+        Packet p = new Packet(index, GenRandString(10), type: PacketType.FLASHTOGGLE);
 
         messageBuffer.Add(new TCPMessage(JsonUtility.ToJson(p), p.hash));
     }
@@ -137,7 +141,7 @@ public class MultiplayerSystem : MonoBehaviour
     {
         int index = !isCli ? 0 : conIndex + 1;
 
-        Packet p = new Packet(index, RandString(10), type: PacketType.HIT, sIndex: 0);
+        Packet p = new Packet(index, GenRandString(10), type: PacketType.HIT, sIndex: 0);
 
         messageBuffer.Add(new TCPMessage(JsonUtility.ToJson(p), p.hash));
     }

@@ -17,7 +17,7 @@ public class MultiplayerTools : MonoBehaviour
     public PositionKeeper spawnPositions;
     public Transform predSpawnPos;
 
-    public float smoothMoveDuration = 0.1f;
+    public float smoothMoveDuration = 0.2f;
     public float maxErr = 0.5f;
 
     public void UpdateTransforms(bool isCli, int conIndex)

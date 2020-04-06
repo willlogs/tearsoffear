@@ -37,7 +37,7 @@ public class MultiplayerTools : MonoBehaviour
                         td.tween.Kill();
                     }
 
-                    td.tween = dummies[i].transform.DOMove(td.position, smoothMoveDuration).OnKill(() => {
+                    td.tween = dummies[i].transform.DOMove(td.position, smoothMoveDuration).SetEase(Ease.Linear).OnKill(() => {
                         td.hasTween = false;
                     });
                     td.hasTween = true;

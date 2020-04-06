@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;
 
+// TODO : Broadcast buffer, add excludeIndex to the TCP message and broadcast accordingly
 public class MultiplayerSystem : MonoBehaviour
 {
     #region Public Variables
@@ -32,6 +33,7 @@ public class MultiplayerSystem : MonoBehaviour
 
     // Message buffer
     public List<TCPMessage> messageBuffer = new List<TCPMessage>();
+    public List<TCPMessage> bcMessageBuffer = new List<TCPMessage>(); // broadcast buffer for the server
 
     // Connection
     public TCPConnection con;
@@ -40,13 +42,12 @@ public class MultiplayerSystem : MonoBehaviour
     public MultiplayerTools tools;
 
     // Options
-    public bool isCli, printLastPacket = true;
+    public bool isCli, printLastPacket = true, isGhost;
     public int conIndex = 0; // conIndex + 1 is the index of the dummy in the scene (if isCli is on) - index of srv is 0
-
     #endregion
 
     #region Private Variables
-    // Private things
+    // actions list
     List<Action> actions = new List<Action>();
 
     // connectino management
@@ -57,13 +58,9 @@ public class MultiplayerSystem : MonoBehaviour
     // For printing last packet
     string lastPacket;
     bool newPacket = false;
-
-    // Message Timeout
-    float timeout = 2;
-    int windowSize = 5;
     #endregion
 
-    #region public methods
+    #region Public Methods
     public void Initialize()
     {
         // TODO: turn this to a method in tools
@@ -81,6 +78,15 @@ public class MultiplayerSystem : MonoBehaviour
     }
 
     #region Send Packets
+    public void SendChatMessage(string m)
+    {
+        int index = !isCli ? 0 : conIndex + 1;
+
+        Packet p = new Packet(index, GenRandString(10), type: PacketType.MESSAGE, targetString: m);
+
+        messageBuffer.Add(new TCPMessage(JsonUtility.ToJson(p), p.hash));
+    }
+
     public void SendToggleUVPacket()
     {
         int index = !isCli ? 0 : conIndex + 1;
@@ -96,7 +102,7 @@ public class MultiplayerSystem : MonoBehaviour
 
         Packet p = new Packet(index, GenRandString(10), sIndex: targetIndex, type: PacketType.SCARE);
 
-        messageBuffer.Add( new TCPMessage(JsonUtility.ToJson(p), p.hash) );
+        messageBuffer.Add(new TCPMessage(JsonUtility.ToJson(p), p.hash));
     }
 
     public void SendDoorTogglePacket(string name)
@@ -121,11 +127,11 @@ public class MultiplayerSystem : MonoBehaviour
     {
         int index = !isCli ? 0 : conIndex + 1;
 
-        Packet p = new Packet(index, GenRandString(10), type: isvis?PacketType.VIS:PacketType.INVIS);
+        Packet p = new Packet(index, GenRandString(10), type: isvis ? PacketType.VIS : PacketType.INVIS);
 
         messageBuffer.Add(new TCPMessage(JsonUtility.ToJson(p), p.hash));
 
-        OnScreenConsole.Instance.Print("vis packet sent " + isvis);
+        OnScreenConsole.instance.Print("vis packet sent " + isvis);
     }
 
     public void SendFlashLightPacket()
@@ -149,6 +155,9 @@ public class MultiplayerSystem : MonoBehaviour
 
     #endregion
 
+    #region Private Methods
+
+    // Initialization
     private void InitializeSystem()
     {
         con.BindEventHandler(OnRecieveData, 0);
@@ -173,14 +182,16 @@ public class MultiplayerSystem : MonoBehaviour
         startListeningAsync.BeginInvoke(null, null);
     }
 
+    // Updated
     private void Update()
     {
-        if(printLastPacket)
+        if (printLastPacket)
             PrintLastPacket();
 
         DoActions();
     }
 
+    // Called in update
     private void DoActions()
     {
         if (actions.Count > 0)
@@ -200,6 +211,7 @@ public class MultiplayerSystem : MonoBehaviour
         }
     }
 
+    // Add transform data to message buffer
     private void SendTD()
     {
         int index = !isCli ? 0 : conIndex + 1;
@@ -215,6 +227,7 @@ public class MultiplayerSystem : MonoBehaviour
         }
     }
 
+    // Set the transform data
     private void SetTD(Packet p)
     {
         try
@@ -223,20 +236,22 @@ public class MultiplayerSystem : MonoBehaviour
             td.isSet = true;
             tools.transformData[p.index] = td;
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             print("err seting td: " + e.ToString());
         }
     }
 
+    // On receive event
     private void OnRecieveData(string data)
     {
-        foreach(string s in Packer.Parse(data))
+        foreach (string s in Packer.Parse(data))
         {
             ParseMessage(s);
         }
     }
 
+    // Each packet gets in here and gets processed
     private void ParseMessage(string data)
     {
         try
@@ -322,6 +337,11 @@ public class MultiplayerSystem : MonoBehaviour
                 case PacketType.UV:
                     actions.Add(new Action(p.index, UvSet));
                     break;
+
+                case PacketType.MESSAGE:
+                    // Change the p.index later with the client name
+                    actions.Add(new Action(p.index + ": " + p.targetString, PrintMessage));
+                    break;
             }
         }
         catch (Exception e)
@@ -331,6 +351,7 @@ public class MultiplayerSystem : MonoBehaviour
         }
     }
 
+    // On connetion event for the client
     private void OnConnectionStablishedCli(string data)
     {
         lastPacket = data;
@@ -341,6 +362,7 @@ public class MultiplayerSystem : MonoBehaviour
         connected = true;
     }
 
+    // On connection event for the server
     private void OnConnectionStablishedSrv(string data)
     {
         lastPacket = data;
@@ -360,6 +382,7 @@ public class MultiplayerSystem : MonoBehaviour
         connected = true;
     }
 
+    // Flush the message buffer
     private void FlushMessages()
     {
         if (connected)
@@ -373,6 +396,7 @@ public class MultiplayerSystem : MonoBehaviour
         }
     }
 
+    // Send a string to a specific socket
     private void SendMessageTo(string mssg, int i = 0)
     {
         con.SendMessage_(mssg, i);
@@ -385,44 +409,21 @@ public class MultiplayerSystem : MonoBehaviour
         con.SendMessage_(mssg.mssg, i);
     }
 
-    private void InstantiateSrv(int input)
-    {
-        tools.AddDummy(0);
-    }
-
-    private void InstantiateCli(int input)
-    {
-        for (int i = 0; i <= conIndex; i++)
-        {
-            if (i == 0)
-            {
-                tools.AddDummyMonster(0);
-            }
-            else
-            {
-                GameObject temp = Instantiate(dummyPrefab, spawnPositions.poses[i].position, Quaternion.identity);
-                tools.dummies.Add(temp);
-                temp.AddComponent<Dummy>().index = tools.dummies.Count - 1;
-                tools.transformData.Add(new TransformData());
-            }
-        }
-
-        tools.AddPlayer(0);
-    }
-    
+    // Prints the last packet's type and hashcode if the proper boolean is on
     private void PrintLastPacket()
     {
         try
         {
             if (newPacket)
             {
-                OnScreenConsole.Instance.Print(lastPacket);
+                OnScreenConsole.instance.Print(lastPacket);
                 newPacket = false;
             }
         }
         catch { }
     }
 
+    #region Actions
     private void GetScared(int input)
     {
         PlayerControl pc = (PlayerControl)tools.myController;
@@ -450,7 +451,7 @@ public class MultiplayerSystem : MonoBehaviour
     private void SetVisibility(int input)
     {
         PredatorControl pc = (PredatorControl)tools.myController;
-        if(input == 0)
+        if (input == 0)
         {
             pc.canMove = false;
         }
@@ -474,4 +475,39 @@ public class MultiplayerSystem : MonoBehaviour
     {
         tools.UpdateTransforms(isCli, conIndex);
     }
+
+    // when a client connects to a server we instantiate it here:
+    private void InstantiateSrv(int input)
+    {
+        tools.AddDummy(0);
+    }
+
+    // when the client gets connected we instantiate everything here
+    private void InstantiateCli(int input)
+    {
+        for (int i = 0; i <= conIndex; i++)
+        {
+            if (i == 0)
+            {
+                tools.AddDummyMonster(0);
+            }
+            else
+            {
+                GameObject temp = Instantiate(dummyPrefab, spawnPositions.poses[i].position, Quaternion.identity);
+                tools.dummies.Add(temp);
+                temp.AddComponent<Dummy>().index = tools.dummies.Count - 1;
+                tools.transformData.Add(new TransformData());
+            }
+        }
+
+        tools.AddPlayer(0);
+    }
+
+    private void PrintMessage(string mssg)
+    {
+        OnScreenChat.Print(mssg);
+    }
+    #endregion
+
+    #endregion
 }

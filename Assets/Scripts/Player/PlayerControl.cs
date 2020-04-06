@@ -19,7 +19,7 @@ public class PlayerControl : Controller
     public float dechargeIn = 5; // in minutes
     public Color defaultFLColor;
     public bool uvOn = false;
-    public SlidersSinglton flchargeSlider;
+    public UnityEngine.UI.Slider flchargeSlider;
     public AudioSource uvSound;
 
     public void GetScared()
@@ -31,7 +31,7 @@ public class PlayerControl : Controller
     protected override void Start()
     {
         FlashLightSet();
-        flchargeSlider = SlidersSinglton.GetByName("FL");
+        flchargeSlider = UISingleton<UnityEngine.UI.Slider>.GetByName("FL");
 
         defaultFLColor = flashLight.color;
 
@@ -51,7 +51,7 @@ public class PlayerControl : Controller
                 flashLightCharge = 0;
                 ToggleFlashLight();
             }
-            flchargeSlider.slider.value = flashLightCharge;
+            flchargeSlider.value = flashLightCharge;
         }
     }
 

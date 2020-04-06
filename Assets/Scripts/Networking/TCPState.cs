@@ -11,6 +11,8 @@ public class TCPState
     public byte[] buffer = new byte[BufferSize];
     public StringBuilder sb;
 
+    public List<TCPMessage> messageBuffer = new List<TCPMessage>();
+
     public TCPState(Socket s)
     {
         workSocket = s;

@@ -9,6 +9,8 @@ using UnityEngine;
 
 public class TCPServer : TCPConnection
 {
+	public static bool listening = true;
+
 	public List<TCPState> connectionsState = new List<TCPState>();
 
 	public delegate void StartListeningAsync();
@@ -29,7 +31,7 @@ public class TCPServer : TCPConnection
 
 		try
 		{
-			while (true)
+			while (listening)
 			{
 				connectionStablished.Reset();
 				srvr_listenersoc.BeginAccept(new AsyncCallback(AcceptCallback), srvr_listenersoc);

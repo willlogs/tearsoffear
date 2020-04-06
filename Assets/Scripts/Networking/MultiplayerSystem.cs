@@ -44,6 +44,9 @@ public class MultiplayerSystem : MonoBehaviour
     // Options
     public bool isCli, printLastPacket = true, isGhost;
     public int conIndex = 0; // conIndex + 1 is the index of the dummy in the scene (if isCli is on) - index of srv is 0
+
+    //name of the player
+    public string player_name = "the player";
     #endregion
 
     #region Private Variables
@@ -339,8 +342,7 @@ public class MultiplayerSystem : MonoBehaviour
                     break;
 
                 case PacketType.MESSAGE:
-                    // Change the p.index later with the client name
-                    actions.Add(new Action(p.index + ": " + p.targetString, PrintMessage));
+                    actions.Add(new Action(p.player_name + ": " + p.targetString, PrintMessage));
                     break;
             }
         }
@@ -402,11 +404,9 @@ public class MultiplayerSystem : MonoBehaviour
         con.SendMessage_(mssg, i);
     }
 
-    private void SendMessageTo(TCPMessage mssg, int i = 0)
+    private void BroadcastMessage(string mssg, int exception = -1)
     {
-        print("sending");
-        mssg.timerOn = true;
-        con.SendMessage_(mssg.mssg, i);
+        con.BroadCastMessage(mssg, exception);
     }
 
     // Prints the last packet's type and hashcode if the proper boolean is on

@@ -16,5 +16,7 @@ public enum PacketType
     FLASHTOGGLE,
     UV,
     ACK,
-    MESSAGE
+    MESSAGE,
+    INFOREQ,
+    INFO
 }

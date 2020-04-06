@@ -5,25 +5,27 @@ using UnityEngine.UI;
 
 public class BasicMenu : MonoBehaviour
 {
-    public InputField ipAddressField;
+    public InputField ipAddressField, nameInput;
 
     public PositionKeeper spawnPoses;
     public Transform predSpawnPos;
     public GameObject mpSystemPrefab;
 
+    public MultiplayerSystem mpSystem;
+
     public GameObject InGameUI;
     public GameObject PersonMenu;
     public GameObject GhostMenu;
 
-    public void HostClickHandler()
-    {
-        MultiplayerSystem mpSystem = InstantiateMP();
+    private bool isCli;
 
-        mpSystem.con = mpSystem.GetComponent<TCPServer>();
+    public void InitializeGameScene()
+    {
+        print("initializing game scene");
 
         mpSystem.spawnPositions = spawnPoses;
         mpSystem.predSpawnPos = predSpawnPos;
-        mpSystem.isCli = false;
+        mpSystem.isCli = isCli;
         mpSystem.con.ipAddr = ipAddressField.text;
 
         InGameUI.SetActive(true);
@@ -34,23 +36,28 @@ public class BasicMenu : MonoBehaviour
         gameObject.SetActive(false);
     }
 
+    public void HostClickHandler()
+    {
+        isCli = false;
+
+        mpSystem = InstantiateMP();
+
+        mpSystem.con = mpSystem.GetComponent<TCPServer>();
+        mpSystem.player_name = nameInput.text.Length > 0 ? nameInput.text : MultiplayerSystem.GenRandString(2);
+
+        InitializeGameScene();
+    }
+
     public void ConnectClickHandler()
     {
-        MultiplayerSystem mpSystem = InstantiateMP();
+        isCli = true;
+
+        mpSystem = InstantiateMP();
 
         mpSystem.con = mpSystem.GetComponent<TCPClient>();
+        mpSystem.player_name = nameInput.text.Length > 0 ? nameInput.text : MultiplayerSystem.GenRandString(2);
 
-        mpSystem.spawnPositions = spawnPoses;
-        mpSystem.predSpawnPos = predSpawnPos;
-        mpSystem.isCli = true;
-        mpSystem.con.ipAddr = ipAddressField.text;
-
-        InGameUI.SetActive(true);
-        GhostMenu.SetActive(false);
-
-        mpSystem.Initialize();
-
-        gameObject.SetActive(false);
+        InitializeGameScene();
     }
 
     public MultiplayerSystem InstantiateMP()

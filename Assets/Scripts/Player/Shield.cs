@@ -19,11 +19,7 @@ public class Shield : MonoBehaviour
 
     private void Start()
     {
-        Slider s = FindObjectOfType<Slider>();
-        if(s.tag == "ChargingSystem")
-        {
-            chargeSlider = s;
-        }
+        chargeSlider = UISingleton<Slider>.GetByName("ChargeSlider");
     }
 
     private void Update()

@@ -7,13 +7,18 @@ public class Controller : MonoBehaviour
     public KeyCode forward = KeyCode.W, backward = KeyCode.S, left = KeyCode.A, right = KeyCode.D;
     public float mouseSpeedX, mouseSpeedY, moveSpeed, minYRot, maxYRot, minXRot, maxXRot, deathWait = 30;
     public Rigidbody rb;
-    public bool isMoving, isAlive = true;
+    public bool isMoving, isAlive = false;
     public Transform theCam;
     public Transform body;
     public FootStepSFX sfx;
 
     protected bool shouldMove = false;
     protected bool normalDeath = true;
+
+    public void GetAlive()
+    {
+        isAlive = true;
+    }
 
     public void Die()
     {
@@ -23,7 +28,7 @@ public class Controller : MonoBehaviour
 
     protected virtual void Start()
     {
-        SetCursorProperties();
+        isAlive = false;
     }
 
     private void GotAlive()
@@ -39,7 +44,11 @@ public class Controller : MonoBehaviour
 
     protected virtual void Update()
     {
-        SetCursorProperties();
+        if (isAlive)
+        {
+            SetCursorProperties();
+        }
+
         if (isAlive || !normalDeath)
         {
             CheckInput();

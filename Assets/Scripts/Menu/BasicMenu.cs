@@ -16,6 +16,7 @@ public class BasicMenu : MonoBehaviour
     public GameObject InGameUI;
     public GameObject PersonMenu;
     public GameObject GhostMenu;
+    public GameObject LobbyMenu;
 
     private bool isCli;
 
@@ -29,10 +30,12 @@ public class BasicMenu : MonoBehaviour
         mpSystem.con.ipAddr = ipAddressField.text;
 
         InGameUI.SetActive(true);
-        PersonMenu.SetActive(false);
+        PersonMenu.SetActive(true);
+        LobbyMenu.SetActive(true);
 
         mpSystem.Initialize();
 
+        LobbyMenu.GetComponent<Lobby>().NewMember(MultiplayerSystem.instance.player_name);
         gameObject.SetActive(false);
     }
 

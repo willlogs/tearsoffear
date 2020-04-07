@@ -31,10 +31,6 @@ public class MultiplayerSystem : MonoBehaviour
     public PositionKeeper spawnPositions;
     public Transform predSpawnPos;
 
-    // Message buffer
-    public List<TCPMessage> messageBuffer = new List<TCPMessage>();
-    public List<TCPMessage> bcMessageBuffer = new List<TCPMessage>(); // broadcast buffer for the server
-
     // Connection
     public TCPConnection con;
 
@@ -64,6 +60,14 @@ public class MultiplayerSystem : MonoBehaviour
     #endregion
 
     #region Public Methods
+    public void StopListening()
+    {
+        if (!isCli)
+        {
+            TCPServer.listening = false;
+        }
+    }
+
     public void Initialize()
     {
         // TODO: turn this to a method in tools
@@ -79,15 +83,29 @@ public class MultiplayerSystem : MonoBehaviour
         InvokeRepeating(nameof(FlushMessages), 0, 0.2f);
         instance = this;
     }
-
     #region Send Packets
+    public void SendStartGamePacket()
+    {
+        int index = !isCli ? 0 : conIndex + 1;
+
+        Packet p = new Packet(index, GenRandString(10), type: PacketType.STARTGAME);
+
+        int receiverIndex = !isCli ? -1 : 0;
+        TCPMessage mssg = new TCPMessage(JsonUtility.ToJson(p), p.hash);
+        con.AddMessage(mssg, -1);
+
+        print("sending start game packet");
+    }
+
     public void SendChatMessage(string m)
     {
         int index = !isCli ? 0 : conIndex + 1;
 
         Packet p = new Packet(index, GenRandString(10), type: PacketType.MESSAGE, targetString: m);
 
-        messageBuffer.Add(new TCPMessage(JsonUtility.ToJson(p), p.hash));
+        int receiverIndex = !isCli ? -1 : 0;
+        TCPMessage mssg = new TCPMessage(JsonUtility.ToJson(p), p.hash);
+        con.AddMessage(mssg, receiverIndex);
     }
 
     public void SendToggleUVPacket()
@@ -96,7 +114,9 @@ public class MultiplayerSystem : MonoBehaviour
 
         Packet p = new Packet(index, GenRandString(10), type: PacketType.UV);
 
-        messageBuffer.Add(new TCPMessage(JsonUtility.ToJson(p), p.hash));
+        int receiverIndex = !isCli ? -1 : 0;
+        TCPMessage mssg = new TCPMessage(JsonUtility.ToJson(p), p.hash);
+        con.AddMessage(mssg, receiverIndex);
     }
 
     public void SendScarePacket(int targetIndex)
@@ -105,7 +125,9 @@ public class MultiplayerSystem : MonoBehaviour
 
         Packet p = new Packet(index, GenRandString(10), sIndex: targetIndex, type: PacketType.SCARE);
 
-        messageBuffer.Add(new TCPMessage(JsonUtility.ToJson(p), p.hash));
+        int receiverIndex = !isCli ? -1 : 0;
+        TCPMessage mssg = new TCPMessage(JsonUtility.ToJson(p), p.hash);
+        con.AddMessage(mssg, receiverIndex);
     }
 
     public void SendDoorTogglePacket(string name)
@@ -114,7 +136,9 @@ public class MultiplayerSystem : MonoBehaviour
 
         Packet p = new Packet(index, GenRandString(10), targetString: name, type: PacketType.DOORTOGGLE);
 
-        messageBuffer.Add(new TCPMessage(JsonUtility.ToJson(p), p.hash));
+        int receiverIndex = !isCli ? -1 : 0;
+        TCPMessage mssg = new TCPMessage(JsonUtility.ToJson(p), p.hash);
+        con.AddMessage(mssg, receiverIndex);
     }
 
     public void SendCollectPacket(string name)
@@ -123,7 +147,9 @@ public class MultiplayerSystem : MonoBehaviour
 
         Packet p = new Packet(index, GenRandString(10), targetString: name, type: PacketType.COLLECT);
 
-        messageBuffer.Add(new TCPMessage(JsonUtility.ToJson(p), p.hash));
+        int receiverIndex = !isCli ? -1 : 0;
+        TCPMessage mssg = new TCPMessage(JsonUtility.ToJson(p), p.hash);
+        con.AddMessage(mssg, receiverIndex);
     }
 
     public void SendVisPacket(bool isvis)
@@ -132,7 +158,9 @@ public class MultiplayerSystem : MonoBehaviour
 
         Packet p = new Packet(index, GenRandString(10), type: isvis ? PacketType.VIS : PacketType.INVIS);
 
-        messageBuffer.Add(new TCPMessage(JsonUtility.ToJson(p), p.hash));
+        int receiverIndex = !isCli ? -1 : 0;
+        TCPMessage mssg = new TCPMessage(JsonUtility.ToJson(p), p.hash);
+        con.AddMessage(mssg, receiverIndex);
 
         OnScreenConsole.instance.Print("vis packet sent " + isvis);
     }
@@ -143,7 +171,9 @@ public class MultiplayerSystem : MonoBehaviour
 
         Packet p = new Packet(index, GenRandString(10), type: PacketType.FLASHTOGGLE);
 
-        messageBuffer.Add(new TCPMessage(JsonUtility.ToJson(p), p.hash));
+        int receiverIndex = !isCli ? -1 : 0;
+        TCPMessage mssg = new TCPMessage(JsonUtility.ToJson(p), p.hash);
+        con.AddMessage(mssg, receiverIndex);
     }
 
     public void SendHitPacket()
@@ -152,7 +182,9 @@ public class MultiplayerSystem : MonoBehaviour
 
         Packet p = new Packet(index, GenRandString(10), type: PacketType.HIT, sIndex: 0);
 
-        messageBuffer.Add(new TCPMessage(JsonUtility.ToJson(p), p.hash));
+        int receiverIndex = !isCli ? -1 : 0;
+        TCPMessage mssg = new TCPMessage(JsonUtility.ToJson(p), p.hash);
+        con.AddMessage(mssg, receiverIndex);
     }
     #endregion
 
@@ -172,7 +204,7 @@ public class MultiplayerSystem : MonoBehaviour
         }
         else
         {
-            con.BindEventHandler(OnConnectionStablishedSrv, 1);
+            con.BindEventHandler(OnConnectionEstablishedSrv, 1);
             tools.AddMonster(0);
             StartServer();
         }
@@ -226,7 +258,9 @@ public class MultiplayerSystem : MonoBehaviour
             Packet p = new Packet(index, "", td: td, tdSet: true);
 
             // if you want to make it totally multiplayer change this part for the server : broadcast
-            messageBuffer.Add(new TCPMessage(JsonUtility.ToJson(p), ""));
+            int receiverIndex = !isCli ? -1 : 0;
+            TCPMessage mssg = new TCPMessage(JsonUtility.ToJson(p), p.hash);
+            con.AddMessage(mssg, receiverIndex);
         }
     }
 
@@ -266,8 +300,11 @@ public class MultiplayerSystem : MonoBehaviour
                 lastPacket = p.hash + " " + p.type.ToString();
                 newPacket = true;
             }
-            //if (!isCli)
-            //    con.BroadCastMessage(data, p.index - 1);
+
+            if (!isCli)
+            {
+                con.AddMessage(new TCPMessage(data, p.hash), -1);
+            }
 
             switch (p.type)
             {
@@ -280,6 +317,8 @@ public class MultiplayerSystem : MonoBehaviour
                     break;
 
                 case PacketType.NEWCLI:
+                    print("NEWCLI");
+                    FindObjectOfType<Lobby>().NewMember(p.player_name);
                     if (p.isPred)
                     {
                         actions.Add(new Action(-1, tools.AddDummyMonster));
@@ -344,6 +383,11 @@ public class MultiplayerSystem : MonoBehaviour
                 case PacketType.MESSAGE:
                     actions.Add(new Action(p.player_name + ": " + p.targetString, PrintMessage));
                     break;
+
+                case PacketType.STARTGAME:
+                    print("start game packet");
+                    actions.Add(new Action(0, StartGameScene));
+                    break;
             }
         }
         catch (Exception e)
@@ -365,7 +409,7 @@ public class MultiplayerSystem : MonoBehaviour
     }
 
     // On connection event for the server
-    private void OnConnectionStablishedSrv(string data)
+    private void OnConnectionEstablishedSrv(string data)
     {
         lastPacket = data;
         newPacket = true;
@@ -378,8 +422,9 @@ public class MultiplayerSystem : MonoBehaviour
         else
         {
             actions.Add(new Action(-1, tools.AddDummy));
+
             Packet p = new Packet(conIndex, "", type: PacketType.NEWCLI);
-            con.BroadCastMessage(JsonUtility.ToJson(p), conIndex);
+            con.AddMessage(new TCPMessage(JsonUtility.ToJson(p), p.hash), -1);
         }
         connected = true;
     }
@@ -390,23 +435,9 @@ public class MultiplayerSystem : MonoBehaviour
         if (connected)
         {
             SendTD();
-            if (messageBuffer.Count > 0)
-            {
-                SendMessageTo(Packer.Pack(messageBuffer.ToArray()));
-                messageBuffer.Clear();
-            }
+
+            con.FlushBuffer();
         }
-    }
-
-    // Send a string to a specific socket
-    private void SendMessageTo(string mssg, int i = 0)
-    {
-        con.SendMessage_(mssg, i);
-    }
-
-    private void BroadcastMessage(string mssg, int exception = -1)
-    {
-        con.BroadCastMessage(mssg, exception);
     }
 
     // Prints the last packet's type and hashcode if the proper boolean is on
@@ -506,6 +537,12 @@ public class MultiplayerSystem : MonoBehaviour
     private void PrintMessage(string mssg)
     {
         OnScreenChat.Print(mssg);
+    }
+
+    private void StartGameScene(int input)
+    {
+        print("starting the srvr");
+        FindObjectOfType<Lobby>().StartGame();
     }
     #endregion
 

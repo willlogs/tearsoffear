@@ -46,7 +46,9 @@ public abstract class TCPConnection : MonoBehaviour
 		}
 	}
 
+	public abstract void FlushBuffer();
 	public abstract void SendMessage_(string mssg, int conIndex = 0);
 	public abstract void BroadCastMessage(string mssg, int index = -1);
 	public abstract void StartIt();
+	public abstract void AddMessage(TCPMessage mssg, int conIndex);
 }

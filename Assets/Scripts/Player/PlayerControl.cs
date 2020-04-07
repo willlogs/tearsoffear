@@ -30,6 +30,7 @@ public class PlayerControl : Controller
 
     protected override void Start()
     {
+        isAlive = false;
         FlashLightSet();
         flchargeSlider = UISingleton<UnityEngine.UI.Slider>.GetByName("FL");
 

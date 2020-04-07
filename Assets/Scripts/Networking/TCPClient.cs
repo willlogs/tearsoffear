@@ -12,7 +12,9 @@ public class TCPClient : TCPConnection
 	public bool isConnected = false;
 
 	public int conIndex = -1;
-	public override void StartIt()
+
+    #region Public Methods
+    public override void StartIt()
 	{
 		StartConnection();
 	}
@@ -36,20 +38,43 @@ public class TCPClient : TCPConnection
 		}
 	}
 
-	private void ConnectionCallback(IAsyncResult ar)
+	public override void SendMessage_(string mssg, int conIndex = 0)
 	{
-		connectionStablished.Set();
-		Debug.Log("Connection stablished");
-		isConnected = true;
-
-		TCPState state = (TCPState)ar.AsyncState;
-		StartReceiving(state);
+		if (isConnected)
+		{
+			mssg = mssg + "<EOF>";
+			byte[] byteData = Encoding.ASCII.GetBytes(mssg);
+			theState.workSocket.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallback), theState);
+		}
 	}
 
-	private void StartReceiving(TCPState state)
+	public override void BroadCastMessage(string mssg, int index = -1)
 	{
-		state.workSocket.BeginReceive(state.buffer, 0, TCPState.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);
+		Debug.LogWarning("You are trying to broadcast from a client! This is not cool man!");
 	}
+
+	public void ShutDown()
+	{
+		theState.workSocket.Shutdown(SocketShutdown.Both);
+		theState.workSocket.Close();
+		Debug.Log("socket shutdown");
+		isConnected = false;
+	}
+
+	public override void FlushBuffer()
+	{
+		if(theState.messageBuffer.Count > 0)
+		{
+			SendMessage_(Packer.Pack(theState.messageBuffer.ToArray()));
+			theState.messageBuffer.Clear();
+		}
+	}
+
+	public override void AddMessage(TCPMessage mssg, int conIndex)
+	{
+		theState.messageBuffer.Add(mssg);
+	}
+	#endregion
 
 	protected override void ReceiveCallback(IAsyncResult ar)
 	{
@@ -102,22 +127,8 @@ public class TCPClient : TCPConnection
 		}
 	}
 
-	public override void SendMessage_(string mssg, int conIndex = 0)
-	{
-		if (isConnected)
-		{
-			mssg = mssg + "<EOF>";
-			byte[] byteData = Encoding.ASCII.GetBytes(mssg);
-			theState.workSocket.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallback), theState);
-		}
-	}
-
-	public override void BroadCastMessage(string mssg, int index = -1)
-	{
-		Debug.LogWarning("You are trying to broadcast from a client! This is not cool man!");
-	}
-
-	private void SendCallback(IAsyncResult ar)
+    #region Private Methods
+    private void SendCallback(IAsyncResult ar)
 	{
 		try
 		{
@@ -130,11 +141,19 @@ public class TCPClient : TCPConnection
 		}
 	}
 
-	public void ShutDown()
+	private void ConnectionCallback(IAsyncResult ar)
 	{
-		theState.workSocket.Shutdown(SocketShutdown.Both);
-		theState.workSocket.Close();
-		Debug.Log("socket shutdown");
-		isConnected = false;
+		connectionStablished.Set();
+		Debug.Log("Connection stablished");
+		isConnected = true;
+
+		TCPState state = (TCPState)ar.AsyncState;
+		StartReceiving(state);
 	}
+
+	private void StartReceiving(TCPState state)
+	{
+		state.workSocket.BeginReceive(state.buffer, 0, TCPState.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);
+	}
+    #endregion
 }

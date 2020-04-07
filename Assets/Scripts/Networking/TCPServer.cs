@@ -15,7 +15,8 @@ public class TCPServer : TCPConnection
 
 	public delegate void StartListeningAsync();
 
-	public override void StartIt()
+    #region public methods
+    public override void StartIt()
 	{
 		StartListening();
 	}
@@ -46,28 +47,84 @@ public class TCPServer : TCPConnection
 		}
 	}
 
-	private void AcceptCallback(IAsyncResult ar)
+	public override void FlushBuffer()
 	{
-		connectionStablished.Set();
+		if (connectionsState.Count > 0)
+		{
+			int i = 0;
+			foreach (TCPState connection in connectionsState)
+			{
+				if (connection.messageBuffer.Count > 0)
+				{
+					SendMessage_(Packer.Pack(connection.messageBuffer.ToArray()), i);
+					connection.messageBuffer.Clear();
+				}
 
-		Socket listener = (Socket)ar.AsyncState;
-		Socket handler = listener.EndAccept(ar);
-
-		TCPState conState = new TCPState(handler);
-		connectionsState.Add(conState);
-
-		int conIndex = connectionsState.Count - 1;
-		SendMessage_(conIndex + "", conIndex);
-
-		OnConnectedHandler(conIndex + "");
-
-		StartReceiving(conState);
+				i++;
+			}
+		}
 	}
 
-	private void StartReceiving(TCPState state)
+	public override void SendMessage_(string mssg, int conIndex = 0)
 	{
-		state.workSocket.BeginReceive(state.buffer, 0, TCPState.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);
+		if (connectionsState.Count > 0)
+		{
+			mssg = mssg + "<EOF>";
+			byte[] byteData = Encoding.ASCII.GetBytes(mssg);
+			connectionsState[conIndex].workSocket.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallback), connectionsState[conIndex]);
+		}
+		else
+		{
+			Debug.LogWarning("no connections found but you're trying to broadcast a message");
+		}
 	}
+
+	public override void BroadCastMessage(string mssg, int index = -1)
+	{
+		if (connectionsState.Count > 0)
+		{
+			int i = 0;
+			foreach (TCPState connection in connectionsState)
+			{
+				if (index > -1 && i == index)
+				{
+					i++;
+					continue;
+				}
+				mssg = mssg + "<EOF>";
+				byte[] byteData = Encoding.ASCII.GetBytes(mssg);
+				connection.workSocket.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallback), connection);
+				i++;
+			}
+		}
+		else
+		{
+			Debug.LogWarning("no connections found but you're trying to broadcast a message");
+		}
+	}
+
+	public void ShutDown()
+	{
+		connectionsState[0].workSocket.Shutdown(SocketShutdown.Both);
+		connectionsState[0].workSocket.Close();
+		Debug.Log("socket shutdown");
+	}
+
+	public override void AddMessage(TCPMessage mssg, int conIndex)
+	{
+		if (conIndex >= 0)
+		{
+			connectionsState[conIndex].messageBuffer.Add(mssg);
+		}
+		else
+		{
+			foreach(TCPState con in connectionsState)
+			{
+				con.messageBuffer.Add(mssg);
+			}
+		}
+	}
+	#endregion
 
 	protected override void ReceiveCallback(IAsyncResult ar)
 	{
@@ -115,61 +172,41 @@ public class TCPServer : TCPConnection
 		}
 	}
 
-	public override void SendMessage_(string mssg, int conIndex = 0)
-	{
-		if (connectionsState.Count > 0)
-		{
-			mssg = mssg + "<EOF>";
-			byte[] byteData = Encoding.ASCII.GetBytes(mssg);
-			connectionsState[conIndex].workSocket.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallback), connectionsState[conIndex]);
-		}
-		else
-		{
-			Debug.LogWarning("no connections found but you're trying to broadcast a message");
-		}
-	}
-
-	public override void BroadCastMessage(string mssg, int index = -1)
-	{
-		if (connectionsState.Count > 0)
-		{
-			int i = 0;
-			foreach (TCPState connection in connectionsState)
-			{
-				if (index > -1 && i == index)
-				{
-					i++;
-					continue;
-				}
-				mssg = mssg + "<EOF>";
-				byte[] byteData = Encoding.ASCII.GetBytes(mssg);
-				connection.workSocket.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallback), connection);
-				i++;
-			}
-		}
-		else
-		{
-			Debug.LogWarning("no connections found but you're trying to broadcast a message");
-		}
-	}
-
-	private void SendCallback(IAsyncResult ar)
+    #region private methods
+    private void SendCallback(IAsyncResult ar)
 	{
 		try
 		{
 			TCPState state = (TCPState)ar.AsyncState;
 			int bytesSent = state.workSocket.EndSend(ar);
 		}
-		catch(Exception e) 
+		catch (Exception e)
 		{
 			Debug.LogError(e.ToString());
 		}
 	}
 
-	public void ShutDown()
+	private void AcceptCallback(IAsyncResult ar)
 	{
-		connectionsState[0].workSocket.Shutdown(SocketShutdown.Both);
-		connectionsState[0].workSocket.Close();
-		Debug.Log("socket shutdown");
+		connectionStablished.Set();
+
+		Socket listener = (Socket)ar.AsyncState;
+		Socket handler = listener.EndAccept(ar);
+
+		TCPState conState = new TCPState(handler);
+		connectionsState.Add(conState);
+
+		int conIndex = connectionsState.Count - 1;
+		SendMessage_(conIndex + "", conIndex);
+
+		OnConnectedHandler(conIndex + "");
+
+		StartReceiving(conState);
 	}
+
+	private void StartReceiving(TCPState state)
+	{
+		state.workSocket.BeginReceive(state.buffer, 0, TCPState.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);
+	}
+	#endregion
 }

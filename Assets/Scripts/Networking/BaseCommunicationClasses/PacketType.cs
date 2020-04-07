@@ -18,5 +18,6 @@ public enum PacketType
     ACK,
     MESSAGE,
     INFOREQ,
-    INFO
+    INFO,
+    STARTGAME
 }
